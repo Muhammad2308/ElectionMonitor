@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Camera, X, Image as ImageIcon } from 'lucide-react';
+import { Camera, X } from 'lucide-react';
 import { db } from '../../storage/db';
 
 interface MediaCaptureProps {

@@ -4,7 +4,6 @@ import { MapPin, Building, Users } from 'lucide-react';
 
 export const AssignmentDetails: React.FC = () => {
     const [assignment, setAssignment] = useState<any | null>(null);
-    const [pu, setPu] = useState<any | null>(null);
 
     useEffect(() => {
         const loadAssignment = async () => {
@@ -12,7 +11,6 @@ export const AssignmentDetails: React.FC = () => {
             // For now, we load the first polling unit from the local database to demonstrate
             const firstPu = await db.polling_units.limit(1).first();
             if (firstPu) {
-                setPu(firstPu);
                 const ward = await db.wards.get(firstPu.ward_id);
                 setAssignment({
                     pollingUnit: firstPu,
