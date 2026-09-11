@@ -17,6 +17,7 @@ class ReportIncidentRequest extends FormRequest
             'id'              => ['nullable', 'uuid'],
             'category_id'     => ['required', 'integer', 'exists:incident_categories,id'],
             'polling_unit_id' => ['required', 'integer', 'exists:polling_units,id'],
+            'severity'        => ['nullable', 'in:low,medium,high,critical'],
             'description'     => ['nullable', 'string', 'max:5000'],
             'incident_time'   => ['nullable', 'date'],
             'latitude'        => ['nullable', 'numeric', 'between:-90,90'],

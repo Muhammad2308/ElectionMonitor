@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             \App\Modules\Roles\Seeders\RolesAndPermissionsSeeder::class,
             CategorySeeder::class,
             \App\Modules\ReferenceData\Seeders\ElectoralHierarchySeeder::class,
+            DemoDataSeeder::class,
         ]);
     }
 }

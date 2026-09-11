@@ -13,11 +13,16 @@ class IncidentResource extends JsonResource
             'id'              => $this->id,
             'category_id'     => $this->category_id,
             'category_name'   => $this->category?->name,
+            'severity'        => $this->severity,
+            'status'          => $this->status,
             'polling_unit_id' => $this->polling_unit_id,
             'polling_unit'    => $this->whenLoaded('pollingUnit', fn () => [
                 'id'      => $this->pollingUnit->id,
                 'pu_code' => $this->pollingUnit->pu_code,
                 'name'    => $this->pollingUnit->name,
+                'ward'    => $this->pollingUnit->ward?->name,
+                'lga'     => $this->pollingUnit->ward?->lga?->name,
+                'state'   => $this->pollingUnit->ward?->lga?->state?->name,
             ]),
             'reporter'        => $this->whenLoaded('user', fn () => [
                 'id'   => $this->user->id,

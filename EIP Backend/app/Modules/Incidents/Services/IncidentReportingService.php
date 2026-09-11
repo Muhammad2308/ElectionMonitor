@@ -18,6 +18,8 @@ class IncidentReportingService
                 'user_id'         => $user->id,
                 'polling_unit_id' => $data['polling_unit_id'],
                 'category_id'     => $data['category_id'],
+                'severity'        => $data['severity'] ?? 'medium',
+                'status'          => 'open',
                 'description'     => $data['description'] ?? null,
                 'latitude'        => $data['latitude'] ?? null,
                 'longitude'       => $data['longitude'] ?? null,

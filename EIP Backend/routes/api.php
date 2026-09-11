@@ -13,6 +13,9 @@ use App\Modules\GIS\Controllers\GISController;
 use App\Modules\Reports\Controllers\ReportController;
 use App\Modules\Notifications\Controllers\NotificationController;
 use App\Modules\Audit\Controllers\AuditController;
+use App\Modules\Roles\Controllers\RoleController;
+use App\Modules\Roles\Controllers\PermissionController;
+use App\Modules\Dashboard\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -72,6 +75,25 @@ Route::prefix('v1')->group(function () {
             Route::delete('/{id}',           [UserController::class, 'destroy']);
             Route::post('/{id}/suspend',     [UserController::class, 'suspend']);
             Route::post('/{id}/assign-role', [UserController::class, 'assignRole']);
+        });
+
+        // Roles & Permissions
+        Route::prefix('roles')->group(function () {
+            Route::get('/',        [RoleController::class, 'index']);
+            Route::post('/',       [RoleController::class, 'store']);
+            Route::get('/{id}',    [RoleController::class, 'show']);
+            Route::put('/{id}',    [RoleController::class, 'update']);
+            Route::delete('/{id}', [RoleController::class, 'destroy']);
+        });
+        Route::get('/permissions', [PermissionController::class, 'index']);
+
+        // Dashboard
+        Route::prefix('dashboard')->group(function () {
+            Route::get('/metrics',        [DashboardController::class, 'metrics']);
+            Route::get('/incidents',      [DashboardController::class, 'incidents']);
+            Route::get('/activity',       [DashboardController::class, 'activity']);
+            Route::get('/activity-chart', [DashboardController::class, 'activityChart']);
+            Route::get('/status',         [DashboardController::class, 'status']);
         });
 
         // GIS
