@@ -21,6 +21,8 @@ class Incident extends Model
         'user_id',
         'polling_unit_id',
         'category_id',
+        'severity',
+        'status',
         'description',
         'incident_time',
         'latitude',
@@ -33,6 +35,16 @@ class Incident extends Model
         'longitude'     => 'float',
         'incident_time' => 'datetime',
     ];
+
+    public function scopeOpen($query)
+    {
+        return $query->whereIn('status', ['open', 'investigating']);
+    }
+
+    public function scopeCritical($query)
+    {
+        return $query->where('severity', 'critical');
+    }
 
     protected static function booted(): void
     {

@@ -3,6 +3,8 @@
 namespace App\Modules\Incidents\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Incidents\Requests\ReportIncidentRequest;
+use App\Modules\Incidents\Resources\IncidentResource;
 use App\Modules\Incidents\Services\IncidentReportingService;
 use App\Modules\Incidents\Models\Incident;
 use Illuminate\Http\Request;
@@ -17,23 +19,68 @@ class IncidentController extends Controller
     }
 
     /**
+     * List incidents with optional filters (paginated).
+     */
+    public function index(Request $request)
+    {
+        abort_unless($request->user()->can('incidents.view'), 403, 'Missing incidents.view permission.');
+
+        $query = Incident::query()->with(['category', 'pollingUnit.ward.lga.state', 'user']);
+
+        if (! $request->user()->can('incidents.view-all')) {
+            $query->where('user_id', $request->user()->id);
+        }
+
+        if ($request->filled('severity')) {
+            $query->where('severity', $request->string('severity'));
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->string('status'));
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->integer('category_id'));
+        }
+
+        if ($request->filled('state_id')) {
+            $query->whereHas('pollingUnit.ward.lga', function ($q) use ($request) {
+                $q->where('state_id', $request->integer('state_id'));
+            });
+        }
+
+        if ($request->filled('search')) {
+            $term = $request->string('search');
+            $query->where('description', 'like', "%{$term}%");
+        }
+
+        $incidents = $query->orderByDesc('incident_time')
+            ->paginate($request->integer('limit', 20));
+
+        return IncidentResource::collection($incidents);
+    }
+
+    /**
+     * Show a single incident.
+     */
+    public function show(string $id)
+    {
+        $incident = Incident::with(['category', 'pollingUnit.ward.lga.state', 'user', 'media'])
+            ->findOrFail($id);
+
+        return new IncidentResource($incident);
+    }
+
+    /**
      * Store a new incident report.
      */
-    public function store(Request $request)
+    public function store(ReportIncidentRequest $request)
     {
-        $request->validate([
-            'category_id' => 'required|integer',
-            'polling_unit_id' => 'required|integer',
-            'description' => 'nullable|string',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-        ]);
-
-        $incident = $this->reportingService->report($request->all(), $request->user());
+        $incident = $this->reportingService->report($request->validated(), $request->user());
 
         return response()->json([
             'message' => 'Incident reported successfully.',
-            'incident' => $incident
+            'incident' => new IncidentResource($incident),
         ], 201);
     }
 
@@ -49,9 +96,9 @@ class IncidentController extends Controller
         ]);
 
         $incident = Incident::findOrFail($request->incident_id);
-        
+
         $media = $this->reportingService->storeMedia(
-            $incident, 
+            $incident,
             $request->file('file'),
             $request->type ?? 'image'
         );
