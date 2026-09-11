@@ -34,8 +34,8 @@ const Header: React.FC = () => {
             <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
             <span className="text-green-400 text-sm font-semibold uppercase tracking-wide">Live Monitoring Active</span>
           </div>
-          <h1 className="text-5xl font-bold text-white mb-2">Election Command Center</h1>
-          <p className="text-gray-400 text-lg">Federal Election 2025 — Observation & Reporting Overview</p>
+          <h1 className="text-4xl font-bold text-white mb-2">Election Command Center</h1>
+          <p className="text-gray-400 text-lg">Observation & Reporting Overview</p>
         </div>
 
         <div className="text-right space-y-2">
@@ -43,7 +43,7 @@ const Header: React.FC = () => {
           <div className="text-3xl font-bold text-white font-mono">{currentTime}</div>
           <div className="flex justify-end gap-2 mt-4">
             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <span className="text-green-400 text-xs font-semibold uppercase tracking-wide">Polling in Progress</span>
+            <span className="text-green-400 text-xs font-semibold uppercase tracking-wide">System Live</span>
           </div>
         </div>
       </div>

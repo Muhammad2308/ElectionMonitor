@@ -19,6 +19,9 @@ class UserResource extends JsonResource
             'status'     => $this->status,
             'role'       => $this->getRoleNames()->first(),
             'roles'      => $this->getRoleNames(),
+            'incidents_count'   => $this->whenCounted('incidents'),
+            'assignments_count' => $this->whenCounted('assignments'),
+            'check_ins_count'   => $this->whenCounted('checkIns'),
         ];
     }
 }

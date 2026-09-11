@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../storage/db';
 import { useAuthStore } from '../../store/useAuthStore';
-import { Camera, MapPin, Send, AlertTriangle } from 'lucide-react';
+import { MapPin, Send, AlertTriangle } from 'lucide-react';
 
 export const IncidentForm: React.FC<{ pollingUnitId: number }> = ({ pollingUnitId }) => {
-    const [categories, setCategories] = useState<any[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
     const [description, setDescription] = useState('');
     const [isSaving, setIsSaving] = useState(false);

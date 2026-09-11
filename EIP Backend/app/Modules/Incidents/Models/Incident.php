@@ -49,7 +49,10 @@ class Incident extends Model
     protected static function booted(): void
     {
         static::addGlobalScope('state_tenant', function (Builder $builder) {
-            $user = auth()->user();
+            // API requests authenticate via the 'sanctum' guard, not the
+            // app's default 'web' guard — auth()->user() would silently
+            // resolve to null here and disable this scope on every request.
+            $user = auth('sanctum')->user();
             if ($user && $user->state_id) {
                 $builder->whereHas('pollingUnit.ward.lga', function ($q) use ($user) {
                     $q->where('state_id', $user->state_id);

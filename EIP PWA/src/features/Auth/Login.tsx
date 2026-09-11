@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
+import { getDeviceId } from '../../utils/deviceIdentity';
+import { homeRouteForRole } from '../../utils/roles';
 import api from '../../api';
+
+interface LoginResponse {
+    user: { id: number; name: string; email: string; role?: string };
+    token: string;
+}
 
 export const Login: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -8,6 +16,7 @@ export const Login: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const setAuth = useAuthStore((state) => state.setAuth);
+    const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -15,8 +24,14 @@ export const Login: React.FC = () => {
         setError(null);
 
         try {
-            const response = await api.post('/auth/login', { email, password });
+            const response = await api.post<LoginResponse>('/auth/login', {
+                email,
+                password,
+                device_id: getDeviceId(),
+                device_name: navigator.userAgent,
+            });
             setAuth(response.user, response.token);
+            navigate(homeRouteForRole(response.user.role));
         } catch (err: any) {
             setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
         } finally {

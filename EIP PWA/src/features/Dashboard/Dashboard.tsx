@@ -8,7 +8,7 @@ import { Wifi, WifiOff, MapPin, AlertTriangle, Clock, CheckCircle, Upload } from
 export const Dashboard: React.FC = () => {
     const user = useAuthStore((s) => s.user);
     const logout = useAuthStore((s) => s.logout);
-    const { isOnline, pendingCount, failedCount, lastSyncTime } = useSyncStore();
+    const { isOnline, pendingCount, lastSyncTime } = useSyncStore();
     const navigate = useNavigate();
 
     const [stats, setStats] = useState({ totalIncidents: 0, totalPending: 0, totalSynced: 0 });
