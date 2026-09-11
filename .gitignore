@@ -1,0 +1,16 @@
+# IDE / Tooling folders
+.claude/
+.vscode/
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# Dependency folders
+node_modules/
+vendor/
+
+# OS metadata
+.DS_Store
+Thumbs.db
