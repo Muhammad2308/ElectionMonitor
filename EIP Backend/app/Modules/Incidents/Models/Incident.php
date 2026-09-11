@@ -1,0 +1,68 @@
+<?php
+
+namespace App\Modules\Incidents\Models;
+
+use App\Models\User;
+use App\Modules\ReferenceData\Models\PollingUnit;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
+
+class Incident extends Model
+{
+    use SoftDeletes;
+
+    protected $primaryKey = 'id';
+    public $incrementing  = false;
+    protected $keyType    = 'string';
+
+    protected $fillable = [
+        'id',
+        'user_id',
+        'polling_unit_id',
+        'category_id',
+        'description',
+        'incident_time',
+        'latitude',
+        'longitude',
+        'sync_status',
+    ];
+
+    protected $casts = [
+        'latitude'      => 'float',
+        'longitude'     => 'float',
+        'incident_time' => 'datetime',
+    ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('state_tenant', function (Builder $builder) {
+            $user = auth()->user();
+            if ($user && $user->state_id) {
+                $builder->whereHas('pollingUnit.ward.lga', function ($q) use ($user) {
+                    $q->where('state_id', $user->state_id);
+                });
+            }
+        });
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function pollingUnit()
+    {
+        return $this->belongsTo(PollingUnit::class);
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(IncidentCategory::class, 'category_id');
+    }
+
+    public function media()
+    {
+        return $this->hasMany(IncidentMedia::class);
+    }
+}
