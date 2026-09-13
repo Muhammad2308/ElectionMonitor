@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Modules\Authentication\Controllers\AuthController;
+use App\Modules\Authentication\Controllers\GoogleAuthController;
 use App\Modules\ReferenceData\Controllers\GeographyController;
 use App\Modules\Incidents\Controllers\IncidentController;
 use App\Modules\Observers\Controllers\CheckInController;
@@ -27,6 +28,7 @@ Route::prefix('v1')->group(function () {
 
     // ── Public ───────────────────────────────────────────────────────
     Route::post('/auth/login', [AuthController::class, 'login']);
+    Route::post('/auth/google', [GoogleAuthController::class, 'login']);
     Route::get('/geography/states',      [GeographyController::class, 'states']);
     Route::get('/geography/categories',  [GeographyController::class, 'categories']);
 
