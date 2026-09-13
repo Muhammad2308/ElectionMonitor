@@ -21,6 +21,15 @@ const GoogleIcon: React.FC = () => (
     </svg>
 );
 
+const Logo: React.FC<{ className?: string }> = ({ className = '' }) => (
+    <div className={`flex items-center gap-3 ${className}`}>
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-lg font-bold text-white shadow-lg shadow-blue-950/50">
+            E
+        </div>
+        <span className="text-lg font-semibold text-white">ElectWatch</span>
+    </div>
+);
+
 export const Login: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -75,58 +84,93 @@ export const Login: React.FC = () => {
     };
 
     return (
-        <div className="relative min-h-screen w-full overflow-hidden bg-slate-950 flex">
-            {/* Ambient background glow — decorative only */}
-            <div aria-hidden className="pointer-events-none absolute -top-40 -left-40 h-96 w-96 rounded-full bg-blue-600/20 blur-3xl" />
-            <div aria-hidden className="pointer-events-none absolute -bottom-40 -right-20 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl" />
+        <div className="relative flex min-h-screen w-full overflow-hidden bg-[#05070d]">
+            {/* Dot-grid texture */}
+            <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 opacity-[0.35] [background-image:radial-gradient(rgba(255,255,255,0.12)_1px,transparent_1px)] [background-size:26px_26px]"
+            />
+            {/* Vivid mesh-gradient glow — decorative only */}
+            <div aria-hidden className="pointer-events-none absolute -top-24 -left-24 h-[30rem] w-[30rem] rounded-full bg-blue-600/40 blur-[110px]" />
+            <div aria-hidden className="pointer-events-none absolute top-1/4 left-1/3 h-72 w-72 rounded-full bg-violet-600/25 blur-[100px] motion-safe:animate-pulse motion-safe:[animation-duration:6s]" />
+            <div aria-hidden className="pointer-events-none absolute -bottom-32 right-0 h-[28rem] w-[28rem] rounded-full bg-emerald-500/30 blur-[110px]" />
+            <div aria-hidden className="pointer-events-none absolute bottom-0 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-blue-500/20 blur-[100px]" />
 
             {/* Branding panel — desktop only */}
-            <div className="relative z-10 hidden w-1/2 flex-col justify-between border-r border-white/5 p-12 lg:flex">
-                <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-lg font-bold text-white">
-                        E
+            <div className="relative z-10 hidden w-1/2 flex-col lg:flex">
+                <Logo className="absolute left-12 top-10" />
+
+                <div className="flex h-full flex-col justify-center px-12 xl:px-20">
+                    <div className="max-w-lg">
+                        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-300">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 motion-safe:animate-pulse" />
+                            Live monitoring active
+                        </div>
+
+                        <h1 className="mb-4 text-4xl font-bold leading-tight text-white xl:text-5xl">
+                            Real-time election observation, built for trust.
+                        </h1>
+                        <p className="text-lg text-slate-400">
+                            Secure reporting, live coverage tracking, and command-center visibility for every polling unit.
+                        </p>
+
+                        <ul className="mt-10 space-y-4">
+                            <li className="flex items-center gap-3 text-slate-300">
+                                <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-400/20 bg-emerald-400/10">
+                                    <ShieldCheck className="text-emerald-400" size={18} aria-hidden="true" />
+                                </span>
+                                Role-based, audited access
+                            </li>
+                            <li className="flex items-center gap-3 text-slate-300">
+                                <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-blue-400/20 bg-blue-400/10">
+                                    <MapPin className="text-blue-400" size={18} aria-hidden="true" />
+                                </span>
+                                Live polling-unit coverage map
+                            </li>
+                            <li className="flex items-center gap-3 text-slate-300">
+                                <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-amber-400/20 bg-amber-400/10">
+                                    <Activity className="text-amber-400" size={18} aria-hidden="true" />
+                                </span>
+                                Real-time incident intelligence
+                            </li>
+                        </ul>
                     </div>
-                    <span className="text-lg font-semibold text-white">ElectWatch</span>
+
+                    {/* Floating preview card — illustrative UI chrome, not live data */}
+                    <div className="mt-14 w-full max-w-md rounded-2xl border border-white/15 bg-white/[0.06] p-5 shadow-2xl shadow-black/50 backdrop-blur-xl">
+                        <div className="mb-4 flex items-center justify-between">
+                            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Live Activity</span>
+                            <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-400">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 motion-safe:animate-pulse" />
+                                LIVE
+                            </span>
+                        </div>
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                                <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
+                                <span className="text-sm text-slate-300">Observer checked in at polling unit</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span className="h-2 w-2 shrink-0 rounded-full bg-amber-400" />
+                                <span className="text-sm text-slate-300">Incident report submitted for review</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span className="h-2 w-2 shrink-0 rounded-full bg-blue-400" />
+                                <span className="text-sm text-slate-300">Coverage map updated in real time</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="max-w-md">
-                    <h1 className="mb-4 text-4xl font-bold leading-tight text-white">
-                        Real-time election observation, built for trust.
-                    </h1>
-                    <p className="text-lg text-slate-400">
-                        Secure reporting, live coverage tracking, and command-center visibility for every polling unit.
-                    </p>
-
-                    <ul className="mt-10 space-y-4">
-                        <li className="flex items-center gap-3 text-slate-300">
-                            <ShieldCheck className="text-emerald-400" size={20} aria-hidden="true" />
-                            Role-based, audited access
-                        </li>
-                        <li className="flex items-center gap-3 text-slate-300">
-                            <MapPin className="text-blue-400" size={20} aria-hidden="true" />
-                            Live polling-unit coverage map
-                        </li>
-                        <li className="flex items-center gap-3 text-slate-300">
-                            <Activity className="text-amber-400" size={20} aria-hidden="true" />
-                            Real-time incident intelligence
-                        </li>
-                    </ul>
-                </div>
-
-                <p className="text-xs text-slate-500">
+                <p className="absolute bottom-8 left-12 text-xs text-slate-500">
                     &copy; {new Date().getFullYear()} ElectWatch. Authorized personnel only.
                 </p>
             </div>
 
             {/* Form panel */}
             <div className="relative z-10 flex flex-1 items-center justify-center p-6 sm:p-10">
-                <div className="w-full max-w-sm">
-                    <div className="mb-8 flex items-center justify-center gap-3 lg:hidden">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-lg font-bold text-white">
-                            E
-                        </div>
-                        <span className="text-lg font-semibold text-white">ElectWatch</span>
-                    </div>
+                <div className="w-full max-w-sm rounded-2xl border border-white/15 bg-white/[0.05] p-8 shadow-2xl shadow-black/50 backdrop-blur-xl sm:p-10">
+                    <Logo className="mb-8 justify-center lg:hidden" />
 
                     <h2 className="text-2xl font-bold text-white">Welcome back</h2>
                     <p className="mt-1.5 mb-8 text-sm text-slate-400">Sign in to continue to your dashboard.</p>
@@ -154,7 +198,7 @@ export const Login: React.FC = () => {
                                     autoComplete="email"
                                     required
                                     placeholder="name@example.com"
-                                    className="w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-11 pr-4 text-white placeholder-slate-500 transition-colors duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                                    className="w-full rounded-xl border border-white/15 bg-white/5 py-3 pl-11 pr-4 text-white placeholder-slate-500 transition-colors duration-200 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                                 />
                             </div>
                         </div>
@@ -174,7 +218,7 @@ export const Login: React.FC = () => {
                                     autoComplete="current-password"
                                     required
                                     placeholder="••••••••"
-                                    className="w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-11 pr-11 text-white placeholder-slate-500 transition-colors duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                                    className="w-full rounded-xl border border-white/15 bg-white/5 py-3 pl-11 pr-11 text-white placeholder-slate-500 transition-colors duration-200 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                                 />
                                 <button
                                     type="button"
@@ -190,7 +234,7 @@ export const Login: React.FC = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 font-semibold text-white transition-colors duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 py-3 font-semibold text-white shadow-lg shadow-blue-950/40 transition-all duration-200 hover:from-blue-500 hover:to-blue-400 hover:shadow-blue-900/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-[#0b0e17] disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             {loading ? (
                                 <Loader2 size={18} className="animate-spin" aria-hidden="true" />
@@ -204,9 +248,9 @@ export const Login: React.FC = () => {
                     </form>
 
                     <div className="my-6 flex items-center gap-3">
-                        <div className="h-px flex-1 bg-white/10" />
+                        <div className="h-px flex-1 bg-white/15" />
                         <span className="text-xs uppercase tracking-wider text-slate-500">or continue with</span>
-                        <div className="h-px flex-1 bg-white/10" />
+                        <div className="h-px flex-1 bg-white/15" />
                     </div>
 
                     <button
@@ -214,7 +258,7 @@ export const Login: React.FC = () => {
                         onClick={handleGoogleSignIn}
                         disabled={googleLoading}
                         title={isGoogleSignInConfigured() ? undefined : 'Google sign-in is not configured for this deployment yet'}
-                        className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/5 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/15 bg-white/[0.06] py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500/40 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         {googleLoading ? <Loader2 size={18} className="animate-spin" aria-hidden="true" /> : <GoogleIcon />}
                         Continue with Google
