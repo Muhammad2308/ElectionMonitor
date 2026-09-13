@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, AlertCircle, ShieldCheck, MapPin, Activity } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { getDeviceId } from '../../utils/deviceIdentity';
 import { homeRouteForRole } from '../../utils/roles';
@@ -19,15 +19,6 @@ const GoogleIcon: React.FC = () => (
         <path fill="#FBBC05" d="M3.97 10.71A5.4 5.4 0 0 1 3.68 9c0-.59.1-1.17.28-1.71V4.96H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.04l3.01-2.33Z" />
         <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.96l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58Z" />
     </svg>
-);
-
-const Logo: React.FC<{ className?: string }> = ({ className = '' }) => (
-    <div className={`flex items-center gap-3 ${className}`}>
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-lg font-bold text-white shadow-lg shadow-blue-950/50">
-            E
-        </div>
-        <span className="text-lg font-semibold text-white">ElectWatch</span>
-    </div>
 );
 
 export const Login: React.FC = () => {
@@ -84,99 +75,32 @@ export const Login: React.FC = () => {
     };
 
     return (
-        <div className="relative flex min-h-screen w-full overflow-hidden bg-[#05070d]">
-            {/* Dot-grid texture */}
-            <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0 opacity-[0.35] [background-image:radial-gradient(rgba(255,255,255,0.12)_1px,transparent_1px)] [background-size:26px_26px]"
-            />
-            {/* Vivid mesh-gradient glow — decorative only */}
-            <div aria-hidden className="pointer-events-none absolute -top-24 -left-24 h-[30rem] w-[30rem] rounded-full bg-blue-600/40 blur-[110px]" />
-            <div aria-hidden className="pointer-events-none absolute top-1/4 left-1/3 h-72 w-72 rounded-full bg-violet-600/25 blur-[100px] motion-safe:animate-pulse motion-safe:[animation-duration:6s]" />
-            <div aria-hidden className="pointer-events-none absolute -bottom-32 right-0 h-[28rem] w-[28rem] rounded-full bg-emerald-500/30 blur-[110px]" />
-            <div aria-hidden className="pointer-events-none absolute bottom-0 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-blue-500/20 blur-[100px]" />
-
-            {/* Branding panel — desktop only */}
-            <div className="relative z-10 hidden w-1/2 flex-col lg:flex">
-                <Logo className="absolute left-12 top-10" />
-
-                <div className="flex h-full flex-col justify-center px-12 xl:px-20">
-                    <div className="max-w-lg">
-                        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-300">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 motion-safe:animate-pulse" />
-                            Live monitoring active
-                        </div>
-
-                        <h1 className="mb-4 text-4xl font-bold leading-tight text-white xl:text-5xl">
-                            Real-time election observation, built for trust.
-                        </h1>
-                        <p className="text-lg text-slate-400">
-                            Secure reporting, live coverage tracking, and command-center visibility for every polling unit.
-                        </p>
-
-                        <ul className="mt-10 space-y-4">
-                            <li className="flex items-center gap-3 text-slate-300">
-                                <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-emerald-400/20 bg-emerald-400/10">
-                                    <ShieldCheck className="text-emerald-400" size={18} aria-hidden="true" />
-                                </span>
-                                Role-based, audited access
-                            </li>
-                            <li className="flex items-center gap-3 text-slate-300">
-                                <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-blue-400/20 bg-blue-400/10">
-                                    <MapPin className="text-blue-400" size={18} aria-hidden="true" />
-                                </span>
-                                Live polling-unit coverage map
-                            </li>
-                            <li className="flex items-center gap-3 text-slate-300">
-                                <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-amber-400/20 bg-amber-400/10">
-                                    <Activity className="text-amber-400" size={18} aria-hidden="true" />
-                                </span>
-                                Real-time incident intelligence
-                            </li>
-                        </ul>
+        <div
+            className="flex min-h-screen w-full items-center justify-center px-4 py-12 sm:px-6"
+            style={{
+                background:
+                    'radial-gradient(ellipse 800px 600px at 20% -10%, rgba(37,99,235,0.16), transparent 60%), ' +
+                    'radial-gradient(ellipse 800px 600px at 100% 110%, rgba(16,185,129,0.12), transparent 60%), ' +
+                    '#05070d',
+            }}
+        >
+            <div className="w-full max-w-100">
+                {/* Logo */}
+                <div className="mb-8 flex flex-col items-center text-center">
+                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-blue-500 to-blue-700 text-2xl font-bold text-white shadow-lg shadow-blue-950/40">
+                        E
                     </div>
-
-                    {/* Floating preview card — illustrative UI chrome, not live data */}
-                    <div className="mt-14 w-full max-w-md rounded-2xl border border-white/15 bg-white/[0.06] p-5 shadow-2xl shadow-black/50 backdrop-blur-xl">
-                        <div className="mb-4 flex items-center justify-between">
-                            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Live Activity</span>
-                            <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-400">
-                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 motion-safe:animate-pulse" />
-                                LIVE
-                            </span>
-                        </div>
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                                <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
-                                <span className="text-sm text-slate-300">Observer checked in at polling unit</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <span className="h-2 w-2 shrink-0 rounded-full bg-amber-400" />
-                                <span className="text-sm text-slate-300">Incident report submitted for review</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <span className="h-2 w-2 shrink-0 rounded-full bg-blue-400" />
-                                <span className="text-sm text-slate-300">Coverage map updated in real time</span>
-                            </div>
-                        </div>
-                    </div>
+                    <h1 className="text-xl font-bold text-white">ElectWatch</h1>
+                    <p className="mt-1 text-sm text-slate-400">Election Observation Platform</p>
                 </div>
 
-                <p className="absolute bottom-8 left-12 text-xs text-slate-500">
-                    &copy; {new Date().getFullYear()} ElectWatch. Authorized personnel only.
-                </p>
-            </div>
-
-            {/* Form panel */}
-            <div className="relative z-10 flex flex-1 items-center justify-center p-6 sm:p-10">
-                <div className="w-full max-w-sm rounded-2xl border border-white/15 bg-white/[0.05] p-8 shadow-2xl shadow-black/50 backdrop-blur-xl sm:p-10">
-                    <Logo className="mb-8 justify-center lg:hidden" />
-
-                    <h2 className="text-2xl font-bold text-white">Welcome back</h2>
-                    <p className="mt-1.5 mb-8 text-sm text-slate-400">Sign in to continue to your dashboard.</p>
+                {/* Card */}
+                <div className="rounded-2xl border border-slate-800 bg-slate-900 px-6 py-8 shadow-2xl shadow-black/40 sm:px-10 sm:py-10">
+                    <h2 className="text-lg font-semibold text-white">Sign in to your account</h2>
+                    <p className="mt-1 mb-6 text-sm text-slate-400">Enter your credentials to continue.</p>
 
                     {error && (
-                        <div role="alert" className="mb-6 flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-500/10 p-3.5 text-sm text-red-200">
+                        <div role="alert" className="mb-6 flex items-start gap-2.5 rounded-lg border border-red-500/30 bg-red-500/10 p-3.5 text-sm text-red-200">
                             <AlertCircle size={18} className="mt-0.5 shrink-0 text-red-400" aria-hidden="true" />
                             <span>{error}</span>
                         </div>
@@ -188,7 +112,7 @@ export const Login: React.FC = () => {
                                 Email address
                             </label>
                             <div className="relative">
-                                <Mail size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden="true" />
+                                <Mail size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden="true" />
                                 <input
                                     id="email"
                                     name="email"
@@ -198,7 +122,7 @@ export const Login: React.FC = () => {
                                     autoComplete="email"
                                     required
                                     placeholder="name@example.com"
-                                    className="w-full rounded-xl border border-white/15 bg-white/5 py-3 pl-11 pr-4 text-white placeholder-slate-500 transition-colors duration-200 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                                    className="block w-full rounded-lg border border-slate-700 bg-slate-800/60 py-2.5 pl-10 pr-3 text-sm text-white placeholder-slate-500 transition-colors duration-150 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                 />
                             </div>
                         </div>
@@ -208,7 +132,7 @@ export const Login: React.FC = () => {
                                 Password
                             </label>
                             <div className="relative">
-                                <Lock size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden="true" />
+                                <Lock size={18} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden="true" />
                                 <input
                                     id="password"
                                     name="password"
@@ -218,13 +142,13 @@ export const Login: React.FC = () => {
                                     autoComplete="current-password"
                                     required
                                     placeholder="••••••••"
-                                    className="w-full rounded-xl border border-white/15 bg-white/5 py-3 pl-11 pr-11 text-white placeholder-slate-500 transition-colors duration-200 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                                    className="block w-full rounded-lg border border-slate-700 bg-slate-800/60 py-2.5 pl-10 pr-10 text-sm text-white placeholder-slate-500 transition-colors duration-150 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword((s) => !s)}
                                     aria-label={showPassword ? 'Hide password' : 'Show password'}
-                                    className="absolute right-3.5 top-1/2 flex -translate-y-1/2 items-center justify-center text-slate-500 transition-colors duration-200 hover:text-slate-300"
+                                    className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center justify-center text-slate-500 transition-colors duration-150 hover:text-slate-300"
                                 >
                                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
@@ -234,23 +158,19 @@ export const Login: React.FC = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 py-3 font-semibold text-white shadow-lg shadow-blue-950/40 transition-all duration-200 hover:from-blue-500 hover:to-blue-400 hover:shadow-blue-900/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-[#0b0e17] disabled:cursor-not-allowed disabled:opacity-60"
+                            className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                            {loading ? (
-                                <Loader2 size={18} className="animate-spin" aria-hidden="true" />
-                            ) : (
-                                <>
-                                    Sign in
-                                    <ArrowRight size={16} aria-hidden="true" />
-                                </>
-                            )}
+                            {loading ? <Loader2 size={18} className="animate-spin" aria-hidden="true" /> : 'Sign in'}
                         </button>
                     </form>
 
-                    <div className="my-6 flex items-center gap-3">
-                        <div className="h-px flex-1 bg-white/15" />
-                        <span className="text-xs uppercase tracking-wider text-slate-500">or continue with</span>
-                        <div className="h-px flex-1 bg-white/15" />
+                    <div className="relative my-6">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-slate-800" />
+                        </div>
+                        <div className="relative flex justify-center">
+                            <span className="bg-slate-900 px-3 text-xs uppercase tracking-wider text-slate-500">or continue with</span>
+                        </div>
                     </div>
 
                     <button
@@ -258,16 +178,16 @@ export const Login: React.FC = () => {
                         onClick={handleGoogleSignIn}
                         disabled={googleLoading}
                         title={isGoogleSignInConfigured() ? undefined : 'Google sign-in is not configured for this deployment yet'}
-                        className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/15 bg-white/[0.06] py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500/40 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="flex w-full items-center justify-center gap-3 rounded-lg border border-slate-700 bg-slate-800/40 py-2.5 text-sm font-medium text-white transition-colors duration-150 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/40 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         {googleLoading ? <Loader2 size={18} className="animate-spin" aria-hidden="true" /> : <GoogleIcon />}
                         Continue with Google
                     </button>
-
-                    <p className="mt-8 text-center text-xs text-slate-500">
-                        This system is for authorized election observers and staff only.
-                    </p>
                 </div>
+
+                <p className="mt-6 text-center text-xs text-slate-500">
+                    This system is for authorized election observers and staff only.
+                </p>
             </div>
         </div>
     );
