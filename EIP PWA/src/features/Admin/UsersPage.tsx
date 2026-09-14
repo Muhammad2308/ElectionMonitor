@@ -136,8 +136,8 @@ const CreateUserModal: React.FC<{
   });
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 w-full max-w-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg border border-gray-700 bg-gray-800 p-6">
         <h3 className="text-lg font-bold text-white mb-4">New User</h3>
         {error && <div className="mb-3 text-sm text-red-400 bg-red-950 border border-red-700/40 rounded-lg p-2">{error}</div>}
         <form
