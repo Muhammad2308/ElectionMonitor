@@ -38,33 +38,35 @@ export const IncidentsPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-5 sm:space-y-6">
         <div>
-          <h2 className="text-2xl font-bold text-white">Incidents</h2>
-          <p className="text-gray-400 text-sm">All incident reports across polling units.</p>
+          <h2 className="text-xl font-bold text-white sm:text-2xl">Incidents</h2>
+          <p className="text-sm text-gray-400">All incident reports across polling units.</p>
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search description…"
-            className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm flex-1 min-w-[200px]"
+            className="min-w-0 flex-1 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white sm:min-w-50 sm:py-2"
           />
-          <select value={severity} onChange={(e) => setSeverity(e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm">
-            <option value="">All severities</option>
-            {['low', 'medium', 'high', 'critical'].map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <select value={status} onChange={(e) => setStatus(e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm">
-            <option value="">All statuses</option>
-            {['open', 'investigating', 'resolved', 'dismissed'].map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          <div className="flex gap-3">
+            <select value={severity} onChange={(e) => setSeverity(e.target.value)}
+              className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white sm:flex-initial sm:py-2">
+              <option value="">All severities</option>
+              {['low', 'medium', 'high', 'critical'].map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <select value={status} onChange={(e) => setStatus(e.target.value)}
+              className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white sm:flex-initial sm:py-2">
+              <option value="">All statuses</option>
+              {['open', 'investigating', 'resolved', 'dismissed'].map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg border border-gray-700 bg-gray-800">
+          <table className="w-full min-w-180 text-sm">
             <thead className="bg-gray-900 text-gray-400 text-xs uppercase tracking-wider">
               <tr>
                 <th className="text-left px-4 py-3">Category</th>
