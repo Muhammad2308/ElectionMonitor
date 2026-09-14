@@ -32,26 +32,26 @@ export const UsersPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-5 sm:space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-white">Observers &amp; Users</h2>
-            <p className="text-gray-400 text-sm">Manage field observers, supervisors, and their roles.</p>
+            <h2 className="text-xl font-bold text-white sm:text-2xl">Observers &amp; Users</h2>
+            <p className="text-sm text-gray-400">Manage field observers, supervisors, and their roles.</p>
           </div>
-          <Button onClick={() => setShowCreate(true)}>+ New User</Button>
+          <Button onClick={() => setShowCreate(true)} className="w-full sm:w-auto">+ New User</Button>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or email…"
-            className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm flex-1"
+            className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white sm:py-2"
           />
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm"
+            className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white sm:py-2"
           >
             <option value="">All roles</option>
             {roles.data?.data.map((r) => (
@@ -60,8 +60,8 @@ export const UsersPage: React.FC = () => {
           </select>
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg border border-gray-700 bg-gray-800">
+          <table className="w-full min-w-180 text-sm">
             <thead className="bg-gray-900 text-gray-400 text-xs uppercase tracking-wider">
               <tr>
                 <th className="text-left px-4 py-3">Name</th>

@@ -1,22 +1,8 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
-
-interface MenuItem {
-  id: string;
-  label: string;
-  icon: string;
-  href: string;
-  badge?: string;
-}
-
-const menuItems: MenuItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: '⊞', href: '/admin/dashboard' },
-  { id: 'incidents', label: 'Incidents', icon: '⚠', href: '/admin/incidents' },
-  { id: 'users', label: 'Observers & Users', icon: '👥', href: '/admin/users' },
-  { id: 'roles', label: 'Roles & Permissions', icon: '🔐', href: '/admin/roles' },
-  { id: 'map', label: 'Live Map', icon: '🗺', href: '/admin/map', badge: 'LIVE' },
-];
+import { navItems } from './navItems';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
@@ -32,38 +18,40 @@ const Sidebar: React.FC = () => {
     .toUpperCase();
 
   return (
-    <aside className="w-72 bg-gray-950 border-r border-gray-800 flex flex-col overflow-hidden">
+    <aside className="hidden w-72 flex-col overflow-hidden border-r border-gray-800 bg-gray-950 lg:flex">
       {/* Logo Section */}
-      <div className="p-6 border-b border-gray-800">
+      <div className="border-b border-gray-800 p-6">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center text-2xl font-bold">
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-600 text-2xl font-bold">
             E
           </div>
           <div>
             <h1 className="text-xl font-bold">ElectWatch</h1>
-            <p className="text-xs text-gray-400 uppercase tracking-wider">Admin Console</p>
+            <p className="text-xs uppercase tracking-wider text-gray-400">Admin Console</p>
           </div>
         </div>
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
-        {menuItems.map((item) => {
+      <nav aria-label="Primary" className="flex-1 space-y-1 overflow-y-auto px-4 py-6">
+        {navItems.map((item) => {
           const active = location.pathname.startsWith(item.href);
+          const Icon = item.icon;
           return (
             <Link
               key={item.id}
               to={item.href}
-              className={`flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
-                active ? 'bg-blue-600/20 text-white border border-blue-600/40' : 'hover:bg-gray-800 text-gray-300'
+              aria-current={active ? 'page' : undefined}
+              className={`flex cursor-pointer items-center justify-between rounded-lg px-4 py-3 transition-colors duration-150 ${
+                active ? 'border border-blue-600/40 bg-blue-600/20 text-white' : 'text-gray-300 hover:bg-gray-800'
               }`}
             >
               <div className="flex items-center gap-3">
-                <span className="text-xl">{item.icon}</span>
+                <Icon size={20} aria-hidden="true" />
                 <span className="font-medium">{item.label}</span>
               </div>
               {item.badge && (
-                <span className="px-2 py-1 rounded text-xs font-semibold bg-green-600 text-green-100">
+                <span className="rounded bg-green-600 px-2 py-1 text-xs font-semibold text-green-100">
                   {item.badge}
                 </span>
               )}
@@ -75,19 +63,20 @@ const Sidebar: React.FC = () => {
       {/* User Profile Section */}
       <div className="border-t border-gray-800 p-4">
         <div className="flex items-center gap-3 px-2">
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-sm font-bold">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold">
             {initials}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white text-sm font-medium truncate">{user?.name}</p>
-            <p className="text-gray-400 text-xs truncate">{user?.role}</p>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-white">{user?.name}</p>
+            <p className="truncate text-xs text-gray-400">{user?.role}</p>
           </div>
           <button
             onClick={() => { logout(); navigate('/login'); }}
             title="Log out"
-            className="text-gray-400 hover:text-white transition-colors"
+            aria-label="Log out"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-gray-400 transition-colors duration-150 hover:bg-gray-800 hover:text-white"
           >
-            ⎋
+            <LogOut size={16} aria-hidden="true" />
           </button>
         </div>
       </div>

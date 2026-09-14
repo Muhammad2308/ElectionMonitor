@@ -26,22 +26,22 @@ export const MapView: React.FC = () => {
   return (
     <AdminLayout>
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <h2 className="flex items-center gap-2 text-xl font-bold text-white sm:text-2xl">
               Live Map
-              <span className="text-xs px-2 py-1 rounded bg-green-600 text-green-100 align-middle">LIVE</span>
+              <span className="rounded bg-green-600 px-2 py-1 align-middle text-xs text-green-100">LIVE</span>
             </h2>
-            <p className="text-gray-400 text-sm">Polling units, observer positions, and open incidents.</p>
+            <p className="text-sm text-gray-400">Polling units, observer positions, and open incidents.</p>
           </div>
-          <div className="flex gap-2 text-sm">
+          <div className="flex flex-wrap gap-2 text-sm">
             <LayerToggle label={`Polling Units (${pollingUnits.data?.data.length ?? 0})`} active={layers.pollingUnits} onClick={() => toggle('pollingUnits')} color="#3b82f6" />
             <LayerToggle label={`Observers (${observers.data?.data.length ?? 0})`} active={layers.observers} onClick={() => toggle('observers')} color="#10b981" />
             <LayerToggle label={`Incidents (${incidents.data?.data.length ?? 0})`} active={layers.incidents} onClick={() => toggle('incidents')} color="#ef4444" />
           </div>
         </div>
 
-        <div className="rounded-lg overflow-hidden border border-gray-700" style={{ height: 'calc(100vh - 260px)', minHeight: 420 }}>
+        <div className="h-[calc(100vh-380px)] min-h-105 overflow-hidden rounded-lg border border-gray-700 sm:h-[calc(100vh-320px)] lg:h-[calc(100vh-260px)]">
           <MapContainer center={NIGERIA_CENTER} zoom={13} style={{ height: '100%', width: '100%', background: '#111827' }}>
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -123,7 +123,7 @@ export const MapView: React.FC = () => {
 const LayerToggle: React.FC<{ label: string; active: boolean; onClick: () => void; color: string }> = ({ label, active, onClick, color }) => (
   <button
     onClick={onClick}
-    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors ${
+    className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-colors duration-150 ${
       active ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-800 bg-gray-900 text-gray-500'
     }`}
   >

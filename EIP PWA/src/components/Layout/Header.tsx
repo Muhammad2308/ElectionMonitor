@@ -27,7 +27,7 @@ const Header: React.FC = () => {
   }, []);
 
   return (
-    <header className="border-b border-gray-800 bg-gray-900 px-8 py-6">
+    <header className="hidden border-b border-gray-800 bg-gray-900 px-8 py-6 lg:block">
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2 mb-4">

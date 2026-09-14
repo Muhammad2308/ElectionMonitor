@@ -12,50 +12,50 @@ export const RolesPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-5 sm:space-y-6">
         <div>
-          <h2 className="text-2xl font-bold text-white">Roles &amp; Permissions</h2>
-          <p className="text-gray-400 text-sm">
+          <h2 className="text-xl font-bold text-white sm:text-2xl">Roles &amp; Permissions</h2>
+          <p className="text-sm text-gray-400">
             {resources.length} permission groups across {roles.data?.data.length ?? 0} roles.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
           {roles.isLoading && <p className="text-gray-500">Loading roles…</p>}
           {roles.data?.data.map((role) => (
-            <div key={role.id} className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-bold text-white capitalize">{role.name.replace(/-/g, ' ')}</h3>
+            <div key={role.id} className="rounded-lg border border-gray-700 bg-gray-800 p-4 sm:p-6">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h3 className="truncate text-base font-bold capitalize text-white sm:text-lg">{role.name.replace(/-/g, ' ')}</h3>
                 <Badge variant="info">{role.users_count} user{role.users_count === 1 ? '' : 's'}</Badge>
               </div>
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">
+              <p className="mb-2 text-xs uppercase tracking-wider text-gray-400">
                 {role.permissions.length} permissions
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {role.permissions.slice(0, 8).map((p) => (
-                  <span key={p} className="text-xs px-2 py-1 rounded bg-gray-900 text-gray-300 border border-gray-700">
+                  <span key={p} className="rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-gray-300">
                     {p}
                   </span>
                 ))}
                 {role.permissions.length > 8 && (
-                  <span className="text-xs px-2 py-1 text-gray-500">+{role.permissions.length - 8} more</span>
+                  <span className="px-2 py-1 text-xs text-gray-500">+{role.permissions.length - 8} more</span>
                 )}
               </div>
             </div>
           ))}
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-          <h3 className="text-lg font-bold text-white mb-4">All Permissions</h3>
+        <div className="rounded-lg border border-gray-700 bg-gray-800 p-4 sm:p-6">
+          <h3 className="mb-4 text-base font-bold text-white sm:text-lg">All Permissions</h3>
           <div className="space-y-4">
             {resources.map((resource) => (
               <div key={resource}>
-                <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">{resource}</p>
+                <p className="mb-2 text-xs uppercase tracking-wider text-gray-500">{resource}</p>
                 <div className="flex flex-wrap gap-2">
                   {(permissions.data?.data ?? [])
                     .filter((p) => p.resource === resource)
                     .map((p) => (
-                      <span key={p.id} className="text-xs px-2 py-1 rounded-full bg-blue-950 text-blue-200 border border-blue-800/40">
+                      <span key={p.id} className="rounded-full border border-blue-800/40 bg-blue-950 px-2 py-1 text-xs text-blue-200">
                         {p.action}
                       </span>
                     ))}
