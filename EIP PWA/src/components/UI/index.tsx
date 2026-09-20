@@ -54,10 +54,12 @@ export const Button: React.FC<ButtonProps> = ({
 interface BadgeProps {
   variant?: 'default' | 'success' | 'danger' | 'warning' | 'info';
   size?: 'sm' | 'md';
+  className?: string;
+  style?: React.CSSProperties;
   children: React.ReactNode;
 }
 
-export const Badge: React.FC<BadgeProps> = ({ variant = 'default', size = 'sm', children }) => {
+export const Badge: React.FC<BadgeProps> = ({ variant = 'default', size = 'sm', className = '', style = {}, children }) => {
   const variantClasses = {
     default: 'bg-gray-700 text-gray-100',
     success: 'bg-green-700 text-green-100',
@@ -66,13 +68,15 @@ export const Badge: React.FC<BadgeProps> = ({ variant = 'default', size = 'sm', 
     info: 'bg-blue-700 text-blue-100',
   };
 
-  const sizeClasses = {
-    sm: 'px-2 py-1 text-xs',
-    md: 'px-3 py-2 text-sm',
-  };
+  const explicitStyles: React.CSSProperties = size === 'sm' 
+    ? { padding: '4px 8px', fontSize: '12px', lineHeight: '1' }
+    : { padding: '6px 12px', fontSize: '14px', lineHeight: '1' };
 
   return (
-    <span className={`font-semibold rounded-full ${variantClasses[variant]} ${sizeClasses[size]}`}>
+    <span 
+      className={`font-semibold rounded-full inline-block ${variantClasses[variant]} ${className}`}
+      style={{ ...explicitStyles, ...style }}
+    >
       {children}
     </span>
   );

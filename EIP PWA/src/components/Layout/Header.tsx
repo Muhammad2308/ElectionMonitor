@@ -27,23 +27,23 @@ const Header: React.FC = () => {
   }, []);
 
   return (
-    <header className="hidden border-b border-gray-800 bg-gray-900 px-8 py-6 lg:block">
+    <header className="hidden border-b border-slate-800/50 bg-slate-950/40 backdrop-blur-xl lg:block relative z-10" style={{ padding: '32px 40px' }}>
       <div className="flex items-start justify-between">
         <div>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-green-400 text-sm font-semibold uppercase tracking-wide">Live Monitoring Active</span>
+          <div className="flex items-center" style={{ gap: '12px', marginBottom: '16px' }}>
+            <div className="bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" style={{ width: '12px', height: '12px' }}></div>
+            <span className="text-emerald-400 font-bold uppercase tracking-[0.1em]" style={{ fontSize: '12px' }}>Live Monitoring Active</span>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">Election Command Center</h1>
-          <p className="text-gray-400 text-lg">Observation & Reporting Overview</p>
+          <h1 className="font-black text-white tracking-tight" style={{ fontSize: '42px', lineHeight: '1.2', marginBottom: '8px' }}>Election Command Center</h1>
+          <p className="text-slate-400 font-medium" style={{ fontSize: '18px' }}>Observation & Reporting Overview</p>
         </div>
 
-        <div className="text-right space-y-2">
-          <div className="text-gray-400 text-sm">{currentDate}</div>
-          <div className="text-3xl font-bold text-white font-mono">{currentTime}</div>
-          <div className="flex justify-end gap-2 mt-4">
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <span className="text-green-400 text-xs font-semibold uppercase tracking-wide">System Live</span>
+        <div className="text-right flex flex-col items-end" style={{ gap: '8px' }}>
+          <div className="text-slate-400 font-semibold tracking-wide uppercase" style={{ fontSize: '14px' }}>{currentDate}</div>
+          <div className="font-bold text-white font-mono tracking-tight" style={{ fontSize: '36px' }}>{currentTime}</div>
+          <div className="flex items-center" style={{ gap: '8px', marginTop: '16px' }}>
+            <div className="bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]" style={{ width: '10px', height: '10px' }}></div>
+            <span className="text-emerald-400 font-bold uppercase tracking-widest" style={{ fontSize: '12px' }}>System Live</span>
           </div>
         </div>
       </div>

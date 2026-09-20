@@ -24,6 +24,7 @@ class Incident extends Model
         'severity',
         'status',
         'description',
+        'involving_party',
         'incident_time',
         'latitude',
         'longitude',

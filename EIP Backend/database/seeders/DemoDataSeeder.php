@@ -83,6 +83,8 @@ class DemoDataSeeder extends Seeder
             $pu = $pollingUnits->random();
             $observer = $observers->random();
 
+            $parties = ['APC', 'PDP', 'LP', 'NNPP', 'None'];
+
             Incident::create([
                 'id'              => Str::uuid()->toString(),
                 'user_id'         => $observer->id,
@@ -91,6 +93,7 @@ class DemoDataSeeder extends Seeder
                 'severity'        => $severities[array_rand($severities)],
                 'status'          => $statuses[array_rand($statuses)],
                 'description'     => 'Demo incident report for local development and UI testing.',
+                'involving_party' => $parties[array_rand($parties)],
                 'incident_time'   => now()->subHours(rand(0, 23))->subMinutes(rand(0, 59)),
                 'latitude'        => $pu->latitude,
                 'longitude'       => $pu->longitude,
