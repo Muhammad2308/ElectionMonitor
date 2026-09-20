@@ -32,26 +32,28 @@ export const UsersPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-5 sm:space-y-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="animate-[eipFadeUp_0.6s_ease-out_both] max-w-7xl mx-auto" style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between" style={{ gap: '24px' }}>
           <div>
-            <h2 className="text-xl font-bold text-white sm:text-2xl">Observers &amp; Users</h2>
-            <p className="text-sm text-gray-400">Manage field observers, supervisors, and their roles.</p>
+            <h2 className="font-black text-white tracking-tight" style={{ fontSize: '32px' }}>Observers &amp; Users</h2>
+            <p className="font-medium text-slate-400" style={{ fontSize: '15px', marginTop: '6px' }}>Manage field observers, supervisors, and their roles.</p>
           </div>
-          <Button onClick={() => setShowCreate(true)} className="w-full sm:w-auto">+ New User</Button>
+          <Button onClick={() => setShowCreate(true)} className="w-full sm:w-auto" style={{ padding: '12px 24px', fontSize: '15px', fontWeight: 'bold' }}>+ New User</Button>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="flex flex-col sm:flex-row" style={{ gap: '16px' }}>
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or email…"
-            className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white sm:py-2"
+            className="flex-1 rounded-xl border border-slate-700/50 bg-slate-800/60 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
+            style={{ padding: '14px 20px', fontSize: '15px' }}
           />
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white sm:py-2"
+            className="rounded-xl border border-slate-700/50 bg-slate-800/60 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all cursor-pointer"
+            style={{ padding: '14px 20px', fontSize: '15px', minWidth: '200px' }}
           >
             <option value="">All roles</option>
             {roles.data?.data.map((r) => (
@@ -60,37 +62,37 @@ export const UsersPage: React.FC = () => {
           </select>
         </div>
 
-        <div className="overflow-x-auto rounded-lg border border-gray-700 bg-gray-800">
-          <table className="w-full min-w-180 text-sm">
-            <thead className="bg-gray-900 text-gray-400 text-xs uppercase tracking-wider">
+        <div className="overflow-x-auto rounded-3xl border border-slate-700/50 bg-slate-800/40 backdrop-blur-md shadow-2xl">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-slate-900/60 text-slate-400 uppercase tracking-widest font-bold" style={{ fontSize: '12px' }}>
               <tr>
-                <th className="text-left px-4 py-3">Name</th>
-                <th className="text-left px-4 py-3">Email</th>
-                <th className="text-left px-4 py-3">State</th>
-                <th className="text-left px-4 py-3">Role</th>
-                <th className="text-left px-4 py-3">Incidents</th>
-                <th className="text-left px-4 py-3">Status</th>
-                <th className="text-left px-4 py-3">Actions</th>
+                <th style={{ padding: '24px' }}>Name</th>
+                <th style={{ padding: '24px' }}>Email</th>
+                <th style={{ padding: '24px' }}>State</th>
+                <th style={{ padding: '24px' }}>Role</th>
+                <th style={{ padding: '24px' }}>Incidents</th>
+                <th style={{ padding: '24px' }}>Status</th>
+                <th style={{ padding: '24px' }}>Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-700/30">
               {users.isLoading && (
-                <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-500">Loading…</td></tr>
+                <tr><td colSpan={7} className="text-center text-slate-500 font-medium" style={{ padding: '40px' }}>Loading…</td></tr>
               )}
               {!users.isLoading && list.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-500">No users found.</td></tr>
+                <tr><td colSpan={7} className="text-center text-slate-500 font-medium" style={{ padding: '40px' }}>No users found.</td></tr>
               )}
               {list.map((u: AdminUser) => (
-                <tr key={u.id} className="border-t border-gray-700 hover:bg-gray-900/50">
-                  <td className="px-4 py-3 text-white font-medium">{u.name}</td>
-                  <td className="px-4 py-3 text-gray-300">{u.email}</td>
-                  <td className="px-4 py-3 text-gray-300">{u.state_name ?? '—'}</td>
-                  <td className="px-4 py-3 text-gray-300">{u.role ?? '—'}</td>
-                  <td className="px-4 py-3 text-gray-300">{u.incidents_count ?? 0}</td>
-                  <td className="px-4 py-3">
+                <tr key={u.id} className="hover:bg-slate-800/60 transition-colors duration-150">
+                  <td className="text-white font-bold" style={{ padding: '20px 24px', fontSize: '15px' }}>{u.name}</td>
+                  <td className="text-slate-300 font-medium" style={{ padding: '20px 24px', fontSize: '14px' }}>{u.email}</td>
+                  <td className="text-slate-300 font-medium capitalize" style={{ padding: '20px 24px', fontSize: '14px' }}>{u.state_name ?? '—'}</td>
+                  <td className="text-slate-300 font-medium capitalize" style={{ padding: '20px 24px', fontSize: '14px' }}>{u.role ?? '—'}</td>
+                  <td className="text-slate-300 font-bold" style={{ padding: '20px 24px', fontSize: '15px' }}>{u.incidents_count ?? 0}</td>
+                  <td style={{ padding: '20px 24px' }}>
                     <Badge variant={statusVariant[u.status] ?? 'default'}>{u.status}</Badge>
                   </td>
-                  <td className="px-4 py-3">
+                  <td style={{ padding: '20px 24px' }}>
                     <Button
                       size="sm"
                       variant={u.status === 'suspended' ? 'success' : 'danger'}
@@ -136,30 +138,30 @@ const CreateUserModal: React.FC<{
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg border border-gray-700 bg-gray-800 p-6">
-        <h3 className="text-lg font-bold text-white mb-4">New User</h3>
-        {error && <div className="mb-3 text-sm text-red-400 bg-red-950 border border-red-700/40 rounded-lg p-2">{error}</div>}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md rounded-3xl border border-slate-700/50 bg-slate-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]" style={{ padding: '32px' }}>
+        <h3 className="font-black text-white tracking-tight" style={{ fontSize: '24px', marginBottom: '24px' }}>New User</h3>
+        {error && <div className="text-red-400 bg-red-950/50 border border-red-700/40 rounded-xl font-medium" style={{ padding: '12px 16px', marginBottom: '20px', fontSize: '14px' }}>{error}</div>}
         <form
-          className="space-y-3"
+          style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
           onSubmit={(e) => { e.preventDefault(); setError(null); createMutation.mutate(); }}
         >
           <input required placeholder="Full name" value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm" />
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all" style={{ padding: '14px 16px', fontSize: '15px' }} />
           <input required type="email" placeholder="Email" value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm" />
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all" style={{ padding: '14px 16px', fontSize: '15px' }} />
           <input required type="password" placeholder="Temporary password" value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm" />
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all" style={{ padding: '14px 16px', fontSize: '15px' }} />
           <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm">
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all" style={{ padding: '14px 16px', fontSize: '15px' }}>
             {roles.map((r) => <option key={r.id} value={r.name}>{r.name}</option>)}
           </select>
-          <div className="flex gap-3 justify-end pt-2">
-            <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button type="submit" isLoading={createMutation.isPending}>Create</Button>
+          <div className="flex justify-end" style={{ gap: '12px', marginTop: '16px' }}>
+            <Button type="button" variant="secondary" onClick={onClose} style={{ padding: '12px 24px', fontWeight: 'bold' }}>Cancel</Button>
+            <Button type="submit" isLoading={createMutation.isPending} style={{ padding: '12px 24px', fontWeight: 'bold' }}>Create User</Button>
           </div>
         </form>
       </div>

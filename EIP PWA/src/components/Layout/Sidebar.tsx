@@ -18,22 +18,22 @@ const Sidebar: React.FC = () => {
     .toUpperCase();
 
   return (
-    <aside className="hidden w-72 flex-col overflow-hidden border-r border-gray-800 bg-gray-950 lg:flex">
+    <aside className="hidden flex-col overflow-hidden border-r border-slate-800/50 bg-slate-950/40 backdrop-blur-xl lg:flex relative z-20 shadow-2xl" style={{ width: '300px' }}>
       {/* Logo Section */}
-      <div className="border-b border-gray-800 p-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-600 text-2xl font-bold">
+      <div className="border-b border-slate-800/50" style={{ padding: '32px 24px' }}>
+        <div className="flex items-center" style={{ gap: '16px' }}>
+          <div className="flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-2xl font-black text-white shadow-lg shadow-blue-500/30" style={{ width: '48px', height: '48px' }}>
             E
           </div>
           <div>
-            <h1 className="text-xl font-bold">ElectWatch</h1>
-            <p className="text-xs uppercase tracking-wider text-gray-400">Admin Console</p>
+            <h1 className="font-black tracking-tight text-white" style={{ fontSize: '24px', lineHeight: '1.2' }}>ElectWatch</h1>
+            <p className="font-bold uppercase tracking-widest text-indigo-400" style={{ fontSize: '11px', marginTop: '4px' }}>Admin Console</p>
           </div>
         </div>
       </div>
 
       {/* Navigation Menu */}
-      <nav aria-label="Primary" className="flex-1 space-y-1 overflow-y-auto px-4 py-6">
+      <nav aria-label="Primary" className="flex-1 overflow-y-auto" style={{ padding: '32px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {navItems.map((item) => {
           const active = location.pathname.startsWith(item.href);
           const Icon = item.icon;
@@ -42,16 +42,19 @@ const Sidebar: React.FC = () => {
               key={item.id}
               to={item.href}
               aria-current={active ? 'page' : undefined}
-              className={`flex cursor-pointer items-center justify-between rounded-lg px-4 py-3 transition-colors duration-150 ${
-                active ? 'border border-blue-600/40 bg-blue-600/20 text-white' : 'text-gray-300 hover:bg-gray-800'
+              className={`flex cursor-pointer items-center justify-between rounded-xl transition-all duration-200 ${
+                active 
+                  ? 'border border-blue-500/30 bg-blue-600/20 text-white shadow-[0_0_15px_rgba(37,99,235,0.15)]' 
+                  : 'border border-transparent text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
               }`}
+              style={{ padding: '16px 20px' }}
             >
-              <div className="flex items-center gap-3">
-                <Icon size={20} aria-hidden="true" />
-                <span className="font-medium">{item.label}</span>
+              <div className="flex items-center" style={{ gap: '16px' }}>
+                <Icon size={22} className={active ? 'text-blue-400' : ''} aria-hidden="true" />
+                <span className="font-semibold" style={{ fontSize: '15px' }}>{item.label}</span>
               </div>
               {item.badge && (
-                <span className="rounded bg-green-600 px-2 py-1 text-xs font-semibold text-green-100">
+                <span className="rounded-md bg-emerald-500/20 font-bold uppercase tracking-wider text-emerald-400 border border-emerald-500/20" style={{ padding: '4px 8px', fontSize: '10px' }}>
                   {item.badge}
                 </span>
               )}
@@ -61,22 +64,23 @@ const Sidebar: React.FC = () => {
       </nav>
 
       {/* User Profile Section */}
-      <div className="border-t border-gray-800 p-4">
-        <div className="flex items-center gap-3 px-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold">
+      <div className="border-t border-slate-800/50 bg-slate-900/30" style={{ padding: '24px' }}>
+        <div className="flex items-center" style={{ gap: '16px' }}>
+          <div className="flex shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 font-bold text-white shadow-lg" style={{ width: '44px', height: '44px', fontSize: '16px' }}>
             {initials}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-white">{user?.name}</p>
-            <p className="truncate text-xs text-gray-400">{user?.role}</p>
+            <p className="truncate font-bold text-white" style={{ fontSize: '15px' }}>{user?.name}</p>
+            <p className="truncate font-medium text-slate-400 capitalize" style={{ fontSize: '12px', marginTop: '4px' }}>{user?.role}</p>
           </div>
           <button
             onClick={() => { logout(); navigate('/login'); }}
             title="Log out"
             aria-label="Log out"
-            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-gray-400 transition-colors duration-150 hover:bg-gray-800 hover:text-white"
+            className="flex shrink-0 cursor-pointer items-center justify-center rounded-xl text-slate-400 transition-colors duration-200 hover:bg-red-500/10 hover:text-red-400"
+            style={{ width: '40px', height: '40px' }}
           >
-            <LogOut size={16} aria-hidden="true" />
+            <LogOut size={20} aria-hidden="true" />
           </button>
         </div>
       </div>

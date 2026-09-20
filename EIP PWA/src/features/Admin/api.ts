@@ -96,6 +96,7 @@ export interface AdminIncident {
     severity: 'low' | 'medium' | 'high' | 'critical';
     status: 'open' | 'investigating' | 'resolved' | 'dismissed';
     description: string | null;
+    involving_party?: string;
     incident_time: string;
     polling_unit?: { id: number; name: string; ward?: string; lga?: string; state?: string };
     reporter?: { id: number; name: string };

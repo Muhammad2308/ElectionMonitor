@@ -12,50 +12,50 @@ export const RolesPage: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-5 sm:space-y-6">
+      <div className="animate-[eipFadeUp_0.6s_ease-out_both] max-w-7xl mx-auto" style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
         <div>
-          <h2 className="text-xl font-bold text-white sm:text-2xl">Roles &amp; Permissions</h2>
-          <p className="text-sm text-gray-400">
+          <h2 className="font-black text-white tracking-tight" style={{ fontSize: '32px' }}>Roles &amp; Permissions</h2>
+          <p className="font-medium text-slate-400" style={{ fontSize: '15px', marginTop: '6px' }}>
             {resources.length} permission groups across {roles.data?.data.length ?? 0} roles.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {roles.isLoading && <p className="text-gray-500">Loading roles…</p>}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" style={{ gap: '32px' }}>
+          {roles.isLoading && <p className="text-slate-500 font-medium">Loading roles…</p>}
           {roles.data?.data.map((role) => (
-            <div key={role.id} className="rounded-lg border border-gray-700 bg-gray-800 p-4 sm:p-6">
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <h3 className="truncate text-base font-bold capitalize text-white sm:text-lg">{role.name.replace(/-/g, ' ')}</h3>
-                <Badge variant="info">{role.users_count} user{role.users_count === 1 ? '' : 's'}</Badge>
+            <div key={role.id} className="rounded-3xl border border-slate-700/50 bg-slate-800/40 backdrop-blur-md shadow-2xl hover:-translate-y-1 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] transition-all duration-300" style={{ padding: '32px' }}>
+              <div className="flex items-center justify-between" style={{ marginBottom: '16px', gap: '8px' }}>
+                <h3 className="truncate font-black capitalize text-white tracking-tight" style={{ fontSize: '22px' }}>{role.name.replace(/-/g, ' ')}</h3>
+                <Badge className='px-2 py-1' variant="info">{role.users_count} user{role.users_count === 1 ? '' : 's'}</Badge>
               </div>
-              <p className="mb-2 text-xs uppercase tracking-wider text-gray-400">
+              <p className="font-bold uppercase tracking-widest text-slate-400" style={{ marginBottom: '24px', fontSize: '12px' }}>
                 {role.permissions.length} permissions
               </p>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap" style={{ gap: '8px' }}>
                 {role.permissions.slice(0, 8).map((p) => (
-                  <span key={p} className="rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-gray-300">
+                  <span key={p} className="rounded-md border border-slate-700/60 bg-slate-900/50 text-slate-300 font-medium" style={{ padding: '6px 10px', fontSize: '11px' }}>
                     {p}
                   </span>
                 ))}
                 {role.permissions.length > 8 && (
-                  <span className="px-2 py-1 text-xs text-gray-500">+{role.permissions.length - 8} more</span>
+                  <span className="font-medium text-slate-500" style={{ padding: '6px 10px', fontSize: '11px' }}>+{role.permissions.length - 8} more</span>
                 )}
               </div>
             </div>
           ))}
         </div>
 
-        <div className="rounded-lg border border-gray-700 bg-gray-800 p-4 sm:p-6">
-          <h3 className="mb-4 text-base font-bold text-white sm:text-lg">All Permissions</h3>
-          <div className="space-y-4">
+        <div className="rounded-3xl border border-slate-700/50 bg-slate-800/40 backdrop-blur-md shadow-2xl" style={{ padding: '40px' }}>
+          <h3 className="font-black text-white tracking-tight" style={{ marginBottom: '32px', fontSize: '24px' }}>All Permissions</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {resources.map((resource) => (
               <div key={resource}>
-                <p className="mb-2 text-xs uppercase tracking-wider text-gray-500">{resource}</p>
-                <div className="flex flex-wrap gap-2">
+                <p className="font-bold uppercase tracking-widest text-indigo-400" style={{ marginBottom: '16px', fontSize: '12px' }}>{resource}</p>
+                <div className="flex flex-wrap" style={{ gap: '12px' }}>
                   {(permissions.data?.data ?? [])
                     .filter((p) => p.resource === resource)
                     .map((p) => (
-                      <span key={p.id} className="rounded-full border border-blue-800/40 bg-blue-950 px-2 py-1 text-xs text-blue-200">
+                      <span key={p.id} className="rounded-lg border border-blue-500/20 bg-blue-600/10 text-blue-300 font-semibold" style={{ padding: '8px 16px', fontSize: '12px' }}>
                         {p.action}
                       </span>
                     ))}
