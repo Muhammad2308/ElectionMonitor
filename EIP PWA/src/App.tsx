@@ -34,9 +34,6 @@ const App: React.FC = () => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const role = useAuthStore((s) => s.user?.role);
 
-  // Demo PU for check-in (replace with real assignment data)
-  const demoPU = { id: 1, name: 'Demo Polling Unit', latitude: 9.0765, longitude: 7.3985 };
-
   return (
     <Router>
       <div className="min-h-screen bg-slate-900 text-slate-100">
@@ -50,8 +47,8 @@ const App: React.FC = () => {
 
             {/* Observer field app */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/report" element={<ProtectedRoute><IncidentForm pollingUnitId={demoPU.id} /></ProtectedRoute>} />
-            <Route path="/checkin" element={<ProtectedRoute><CheckIn assignedPU={demoPU} /></ProtectedRoute>} />
+            <Route path="/report" element={<ProtectedRoute><IncidentForm /></ProtectedRoute>} />
+            <Route path="/checkin" element={<ProtectedRoute><CheckIn /></ProtectedRoute>} />
             <Route path="/assignment" element={<ProtectedRoute><AssignmentDetails /></ProtectedRoute>} />
 
             {/* Admin / situation-room console */}

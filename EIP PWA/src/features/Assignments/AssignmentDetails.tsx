@@ -1,25 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { db } from '../../storage/db';
+import React from 'react';
 import { MapPin, Building, Users } from 'lucide-react';
+import { useMyAssignment } from './useMyAssignment';
 
 export const AssignmentDetails: React.FC = () => {
-    const [assignment, setAssignment] = useState<any | null>(null);
+    const { assignment, isLoading, isOfflineCopy } = useMyAssignment();
 
-    useEffect(() => {
-        const loadAssignment = async () => {
-            // In a real app, the observer's assignment would be fetched from the API
-            // For now, we load the first polling unit from the local database to demonstrate
-            const firstPu = await db.polling_units.limit(1).first();
-            if (firstPu) {
-                const ward = await db.wards.get(firstPu.ward_id);
-                setAssignment({
-                    pollingUnit: firstPu,
-                    ward: ward,
-                });
-            }
-        };
-        loadAssignment();
-    }, []);
+    if (isLoading) return <div className="min-h-screen bg-slate-900 p-4 flex items-center justify-center text-slate-400">Loading assignment…</div>;
 
     if (!assignment) {
         return (
@@ -43,16 +29,17 @@ export const AssignmentDetails: React.FC = () => {
             {/* Polling Unit Card */}
             <div className="glass-panel p-5 mb-4">
                 <p className="text-xs text-slate-400 uppercase tracking-wider mb-2">Polling Unit</p>
-                <h3 className="text-lg font-bold text-white mb-3">{assignment.pollingUnit.name}</h3>
+                <h3 className="text-lg font-bold text-white mb-3">{assignment.polling_unit.name}</h3>
+                {isOfflineCopy && <p className="mb-3 text-xs text-amber-300">Showing your last synchronized assignment.</p>}
 
                 <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm">
                         <span className="text-slate-500 w-16">Code:</span>
-                        <span className="text-slate-200 font-mono">{assignment.pollingUnit.pu_code}</span>
+                        <span className="text-slate-200 font-mono">{assignment.polling_unit.pu_code}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                         <span className="text-slate-500 w-16">Ward:</span>
-                        <span className="text-slate-200">{assignment.ward?.name || 'N/A'}</span>
+                        <span className="text-slate-200">{assignment.polling_unit.ward_id ? 'Available after geography sync' : 'N/A'}</span>
                     </div>
                 </div>
             </div>
@@ -64,7 +51,7 @@ export const AssignmentDetails: React.FC = () => {
                     <p className="text-xs text-slate-400 uppercase tracking-wider">GPS Coordinates</p>
                 </div>
                 <p className="text-sm text-slate-200 font-mono">
-                    {assignment.pollingUnit.latitude?.toFixed(6) || 'N/A'}, {assignment.pollingUnit.longitude?.toFixed(6) || 'N/A'}
+                    {assignment.polling_unit.latitude?.toFixed(6) || 'Pending verification'}, {assignment.polling_unit.longitude?.toFixed(6) || 'Pending verification'}
                 </p>
             </div>
         </div>

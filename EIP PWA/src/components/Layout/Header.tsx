@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ThemeToggle } from '../UI/ThemeToggle';
 
 const Header: React.FC = () => {
   const [currentTime, setCurrentTime] = useState<string>('');
@@ -42,6 +43,7 @@ const Header: React.FC = () => {
           <div className="text-slate-400 font-semibold tracking-wide uppercase" style={{ fontSize: '14px' }}>{currentDate}</div>
           <div className="font-bold text-white font-mono tracking-tight" style={{ fontSize: '36px' }}>{currentTime}</div>
           <div className="flex items-center" style={{ gap: '8px', marginTop: '16px' }}>
+            <ThemeToggle />
             <div className="bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.8)]" style={{ width: '10px', height: '10px' }}></div>
             <span className="text-emerald-400 font-bold uppercase tracking-widest" style={{ fontSize: '12px' }}>System Live</span>
           </div>

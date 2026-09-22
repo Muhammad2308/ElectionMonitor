@@ -1,252 +1,52 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AlertTriangle, ArrowRight, CheckCircle2, ClipboardList, CloudOff, LocateFixed, LogOut, MapPin, Radio, RefreshCw, ShieldCheck, Upload } from 'lucide-react';
+import { db } from '../../storage/db';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useSyncStore } from '../../store/useSyncStore';
-import { db } from '../../storage/db';
-import { useNavigate } from 'react-router-dom';
-import { Wifi, WifiOff, MapPin, AlertTriangle, Clock, CheckCircle, Upload, LogOut, ChevronRight } from 'lucide-react';
+import { useMyAssignment } from '../Assignments/useMyAssignment';
+import { ThemeToggle } from '../../components/UI/ThemeToggle';
 
-const BackgroundOrbs: React.FC = () => (
-    <div style={{ pointerEvents: 'none', position: 'fixed', inset: 0, overflow: 'hidden', zIndex: 0 }} aria-hidden="true">
-        <div style={{
-            position: 'absolute', top: '-10%', right: '-15%',
-            width: '60vmax', height: '60vmax', borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%)',
-            animation: 'eipOrbFloat2 16s ease-in-out infinite',
-        }} />
-        <div style={{
-            position: 'absolute', bottom: '-20%', left: '-10%',
-            width: '50vmax', height: '50vmax', borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(37,99,235,0.15) 0%, transparent 70%)',
-            animation: 'eipOrbFloat1 18s ease-in-out infinite',
-        }} />
-        <div style={{
-            position: 'absolute', inset: 0,
-            backgroundImage: 'linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)',
-            backgroundSize: '40px 40px',
-        }} />
-    </div>
-);
+const Metric: React.FC<{ value: number; label: string }> = ({ value, label }) => <div className="metric"><strong>{value}</strong><span>{label}</span></div>;
 
 export const Dashboard: React.FC = () => {
-    const user = useAuthStore((s) => s.user);
-    const logout = useAuthStore((s) => s.logout);
-    const { isOnline, pendingCount, lastSyncTime } = useSyncStore();
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+  const { isOnline, pendingCount, failedCount, lastSyncTime, isSyncing } = useSyncStore();
+  const { assignment, isLoading, isOfflineCopy, refresh } = useMyAssignment();
+  const [stats, setStats] = useState({ filed: 0, synced: 0 });
 
-    const [stats, setStats] = useState({ totalIncidents: 0, totalPending: 0, totalSynced: 0 });
-    const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const load = async () => setStats({ filed: await db.incidents.count(), synced: await db.incidents.where('sync_status').equals('synced').count() });
+    void load();
+    const timer = window.setInterval(() => void load(), 5000);
+    return () => window.clearInterval(timer);
+  }, []);
 
-    useEffect(() => {
-        const t = setTimeout(() => setMounted(true), 50);
-        return () => clearTimeout(t);
-    }, []);
+  const pollingUnit = assignment?.polling_unit;
+  const hasCoordinate = pollingUnit?.latitude != null && pollingUnit?.longitude != null;
+  const signOut = () => { logout(); navigate('/login'); };
 
-    useEffect(() => {
-        const loadStats = async () => {
-            const total = await db.incidents.count();
-            const pending = await db.incidents.where('sync_status').equals('pending').count();
-            const synced = await db.incidents.where('sync_status').equals('synced').count();
-            setStats({ totalIncidents: total, totalPending: pending, totalSynced: synced });
-        };
-        loadStats();
-        const interval = setInterval(loadStats, 5000);
-        return () => clearInterval(interval);
-    }, []);
-
-    return (
-        <>
-            <style>{`
-                @keyframes eipFadeUp {
-                    from { opacity: 0; transform: translateY(20px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                .dash-enter { animation: eipFadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
-                .dash-enter-delay-1 { animation-delay: 0.1s; }
-                .dash-enter-delay-2 { animation-delay: 0.2s; }
-                .dash-enter-delay-3 { animation-delay: 0.3s; }
-                
-                .glass-card {
-                    background: linear-gradient(145deg, rgba(30,41,59,0.7) 0%, rgba(15,23,42,0.6) 100%);
-                    backdrop-filter: blur(12px);
-                    border: 1px solid rgba(255,255,255,0.08);
-                    border-radius: 20px;
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-                }
-
-                .btn-report {
-                    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
-                    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35);
-                    transition: transform 0.2s, filter 0.2s, box-shadow 0.2s;
-                }
-                .btn-report:active { transform: scale(0.98); }
-                .btn-report:hover { filter: brightness(1.1); box-shadow: 0 12px 32px rgba(239, 68, 68, 0.45); }
-
-                .btn-checkin {
-                    background: linear-gradient(135deg, #10b981 0%, #047857 100%);
-                    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
-                    transition: transform 0.2s, filter 0.2s, box-shadow 0.2s;
-                }
-                .btn-checkin:active { transform: scale(0.98); }
-                .btn-checkin:hover { filter: brightness(1.1); box-shadow: 0 12px 32px rgba(16, 185, 129, 0.45); }
-
-                .pulse-dot {
-                    animation: pulse 2s infinite;
-                }
-                @keyframes pulse {
-                    0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-                    70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
-                    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-                }
-                @keyframes pulse-red {
-                    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-                    70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
-                    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-                }
-            `}</style>
-            
-            <div className="min-h-screen bg-[#060a14] text-slate-100 relative overflow-hidden pb-20">
-                <BackgroundOrbs />
-                
-                {/* Sticky Header */}
-                <div className="sticky top-0 z-50 w-full backdrop-blur-xl bg-[#060a14]/70 border-b border-white/5 pt-6 pb-4 px-5">
-                    <div className="flex items-center justify-between max-w-md mx-auto">
-                        <div className={`dash-enter ${!mounted && 'opacity-0'}`}>
-                            <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-lg shadow-lg shadow-blue-500/30">
-                                    {user?.name?.charAt(0).toUpperCase() || 'O'}
-                                </div>
-                                <div>
-                                    <h1 className="text-sm font-medium text-slate-400 leading-tight">Welcome back,</h1>
-                                    <p className="text-lg font-bold text-white leading-tight">{user?.name}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className={`dash-enter ${!mounted && 'opacity-0'} flex items-center`}>
-                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${
-                                isOnline 
-                                    ? 'bg-green-500/10 text-green-400 border-green-500/20' 
-                                    : 'bg-red-500/10 text-red-400 border-red-500/20'
-                            }`}>
-                                <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-400 pulse-dot' : 'bg-red-400'} ${!isOnline && 'pulse-red'}`} />
-                                {isOnline ? 'Online' : 'Offline'}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="max-w-md mx-auto px-5 pt-6 relative z-10">
-                    
-                    {/* Sync Status Banner */}
-                    {pendingCount > 0 && (
-                        <div className={`dash-enter dash-enter-delay-1 ${!mounted && 'opacity-0'} mb-6`}>
-                            <div className="rounded-2xl bg-gradient-to-r from-orange-500/20 to-yellow-500/10 border border-orange-500/30 p-4 flex items-center gap-4 shadow-lg shadow-orange-500/10">
-                                <div className="bg-orange-500/20 p-2 rounded-full text-orange-400">
-                                    <Upload size={20} className="animate-bounce" />
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className="font-semibold text-orange-200">Sync Pending</h3>
-                                    <p className="text-xs text-orange-300/80 mt-0.5">
-                                        {pendingCount} report{pendingCount > 1 ? 's' : ''} waiting for connection
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Quick Actions (Primary Focus on Mobile) */}
-                    <div className={`dash-enter dash-enter-delay-1 ${!mounted && 'opacity-0'} mb-8`}>
-                        <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 pl-1">Take Action</h2>
-                        <div className="grid grid-cols-1 gap-4">
-                            <button
-                                onClick={() => navigate('/report')}
-                                className="btn-report w-full p-5 rounded-2xl flex items-center justify-between group overflow-hidden relative"
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-                                <div className="flex items-center gap-4 relative z-10">
-                                    <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm">
-                                        <AlertTriangle size={24} className="text-white" />
-                                    </div>
-                                    <div className="text-left">
-                                        <div className="text-lg font-bold text-white">Report Incident</div>
-                                        <div className="text-xs font-medium text-red-200">Log a new event at your PU</div>
-                                    </div>
-                                </div>
-                                <ChevronRight className="text-red-200 opacity-70 relative z-10" />
-                            </button>
-                            
-                            <button
-                                onClick={() => navigate('/checkin')}
-                                className="btn-checkin w-full p-5 rounded-2xl flex items-center justify-between group overflow-hidden relative"
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-                                <div className="flex items-center gap-4 relative z-10">
-                                    <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm">
-                                        <MapPin size={24} className="text-white" />
-                                    </div>
-                                    <div className="text-left">
-                                        <div className="text-lg font-bold text-white">Check-In</div>
-                                        <div className="text-xs font-medium text-emerald-200">Verify your location</div>
-                                    </div>
-                                </div>
-                                <ChevronRight className="text-emerald-200 opacity-70 relative z-10" />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* KPI Stats Grid */}
-                    <div className={`dash-enter dash-enter-delay-2 ${!mounted && 'opacity-0'} mb-8`}>
-                        <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 pl-1">Your Stats</h2>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="glass-card p-5">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <div className="bg-blue-500/20 p-2 rounded-lg text-blue-400">
-                                        <AlertTriangle size={18} />
-                                    </div>
-                                    <span className="text-xs font-semibold text-slate-400 uppercase">Filed</span>
-                                </div>
-                                <p className="text-3xl font-black text-white">{stats.totalIncidents}</p>
-                            </div>
-                            
-                            <div className="glass-card p-5">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <div className="bg-emerald-500/20 p-2 rounded-lg text-emerald-400">
-                                        <CheckCircle size={18} />
-                                    </div>
-                                    <span className="text-xs font-semibold text-slate-400 uppercase">Synced</span>
-                                </div>
-                                <p className="text-3xl font-black text-white">{stats.totalSynced}</p>
-                            </div>
-                            
-                            <div className="glass-card p-5 col-span-2 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="bg-purple-500/20 p-2 rounded-lg text-purple-400">
-                                        <Clock size={18} />
-                                    </div>
-                                    <div>
-                                        <div className="text-xs font-semibold text-slate-400 uppercase">Last Sync Time</div>
-                                        <div className="text-sm font-medium text-white mt-0.5">
-                                            {lastSyncTime ? new Date(lastSyncTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Never'}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Footer Actions */}
-                    <div className={`dash-enter dash-enter-delay-3 ${!mounted && 'opacity-0'} flex justify-center`}>
-                        <button
-                            onClick={() => { logout(); navigate('/login'); }}
-                            className="flex items-center gap-2 px-6 py-3 rounded-full border border-slate-700 bg-slate-800/50 text-slate-300 text-sm font-medium hover:bg-slate-700 hover:text-white transition-colors"
-                        >
-                            <LogOut size={16} />
-                            Sign Out
-                        </button>
-                    </div>
-
-                </div>
-            </div>
-        </>
-    );
+  return <div className="field-shell">
+    <style>{css}</style>
+    <header className="field-header">
+      <div className="brand"><div className="brand-mark">E</div><div><strong>ElectWatch</strong><span>FIELD OPERATIONS</span></div></div>
+      <div className={`connection ${isOnline ? 'online' : 'offline'}`}>{isOnline ? <Radio size={14} /> : <CloudOff size={14} />}{isOnline ? 'Connected' : 'Offline mode'}</div>
+      <ThemeToggle /><button className="profile" onClick={signOut} aria-label="Sign out"><span>{user?.name?.slice(0, 1).toUpperCase() ?? 'O'}</span><LogOut size={17} /></button>
+    </header>
+    <main className="field-main">
+      <section className="intro"><div><p className="eyebrow">OBSERVER CONSOLE</p><h1>Good day, {user?.name?.split(' ')[0] ?? 'Observer'}.</h1><p>Capture verified field intelligence, even without a network connection.</p></div><button className="refresh" onClick={() => void refresh()} disabled={isLoading}><RefreshCw size={16} className={isLoading ? 'spin' : ''} />Refresh assignment</button></section>
+      <section className="dashboard-grid">
+        <article className="assignment-card"><div className="card-kicker"><span><MapPin size={15} />CURRENT ASSIGNMENT</span>{isOfflineCopy && <em>Offline copy</em>}</div>
+          {isLoading ? <div className="skeleton" /> : pollingUnit ? <><h2>{pollingUnit.name}</h2><p className="pu-code">{pollingUnit.pu_code}</p><div className="coordinate-state"><div className={`state-icon ${hasCoordinate ? 'verified' : 'pending'}`}>{hasCoordinate ? <CheckCircle2 size={19} /> : <LocateFixed size={19} />}</div><div><strong>{hasCoordinate ? 'Location verified' : 'Coordinate required'}</strong><span>{hasCoordinate ? 'Approved polling-unit coordinate available.' : 'Capture the live location and evidence for admin review.'}</span></div></div><button className={hasCoordinate ? 'secondary-action' : 'verify-action'} onClick={() => navigate(hasCoordinate ? '/checkin' : '/assignment')}>{hasCoordinate ? 'Open check-in' : 'Verify polling unit'}<ArrowRight size={17} /></button></> : <><h2>No assignment yet</h2><p className="muted">Your coordinator has not assigned you to a polling unit. Refresh when connected.</p></>}
+        </article>
+        <article className="action-card"><div className="card-kicker"><span><ShieldCheck size={15} />FIELD ACTIONS</span></div><button className="report-action" onClick={() => navigate('/report')} disabled={!pollingUnit}><div className="action-icon"><AlertTriangle size={22} /></div><div><strong>Report an incident</strong><span>Record details, GPS and evidence securely.</span></div><ArrowRight size={20} /></button><button className="checkin-action" onClick={() => navigate('/checkin')} disabled={!hasCoordinate}><div className="action-icon"><LocateFixed size={22} /></div><div><strong>Check in at polling unit</strong><span>{hasCoordinate ? 'Confirm your presence with GPS.' : 'Available after coordinate approval.'}</span></div><ArrowRight size={20} /></button><button className="assignment-link" onClick={() => navigate('/assignment')}><ClipboardList size={18} />View assignment details</button></article>
+      </section>
+      <section className="operations-row"><article className="sync-card"><div className="sync-title"><Upload size={18} /><strong>Synchronization</strong><span>{isSyncing ? 'Syncing' : isOnline ? 'Ready' : 'Waiting for network'}</span></div><div className="sync-metrics"><Metric value={pendingCount} label="Queued" /><Metric value={stats.synced} label="Synced" /><Metric value={failedCount} label="Need attention" /></div><p>{lastSyncTime ? `Last completed sync: ${new Date(lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Reports remain safely stored on this device until synchronized.'}</p></article><article className="guide-card"><p className="eyebrow">FIELD CHECKLIST</p><ol><li className={hasCoordinate ? 'done' : ''}>Confirm the polling-unit location</li><li>Check in when you arrive</li><li>Capture incidents with evidence</li></ol></article></section>
+    </main>
+  </div>;
 };
 
+const css = `
+.field-shell{min-height:100vh;background:#f4f7fb;color:#142033;font-family:Inter,ui-sans-serif,system-ui,sans-serif}.field-header{height:76px;background:#071b33;color:#fff;display:flex;align-items:center;padding:0 clamp(20px,5vw,72px);gap:20px;border-bottom:1px solid #163452}.brand{display:flex;align-items:center;gap:11px}.brand-mark{width:36px;height:36px;border-radius:11px;background:linear-gradient(145deg,#2c85ff,#1745a5);display:grid;place-items:center;font-size:19px;font-weight:900}.brand strong,.brand span{display:block}.brand strong{font-size:16px}.brand span{font-size:9px;letter-spacing:.16em;color:#8ba7c6;margin-top:2px}.connection{margin-left:auto;padding:7px 10px;border-radius:20px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px}.connection.online{color:#79f0b6;background:#123d38}.connection.offline{color:#ffd479;background:#493817}.profile{border:1px solid #31516f;background:#102a46;color:#fff;border-radius:10px;padding:5px 8px 5px 5px;display:flex;gap:8px;align-items:center;cursor:pointer}.profile span{width:26px;height:26px;border-radius:7px;background:#e3edff;color:#154892;display:grid;place-items:center;font-weight:800}.field-main{max-width:1240px;margin:0 auto;padding:44px clamp(20px,5vw,52px) 72px}.intro{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px;gap:20px}.eyebrow{font-size:11px;letter-spacing:.12em;font-weight:800;color:#3d72b7;margin:0 0 8px}.intro h1{font-size:clamp(27px,4vw,38px);letter-spacing:-.04em;margin:0}.intro p:not(.eyebrow){color:#64748b;margin:7px 0 0}.refresh{background:#fff;border:1px solid #d9e2ef;border-radius:9px;padding:10px 13px;color:#31445d;font-weight:700;display:flex;gap:8px;align-items:center;cursor:pointer}.dashboard-grid,.operations-row{display:grid;grid-template-columns:1.15fr .85fr;gap:20px}.assignment-card,.action-card,.sync-card,.guide-card{background:#fff;border:1px solid #dce5f0;border-radius:16px;box-shadow:0 8px 30px #1e3b5a0b}.assignment-card{padding:27px;background:linear-gradient(135deg,#fff,#eef6ff)}.card-kicker{display:flex;justify-content:space-between;color:#5c718b;font-size:11px;font-weight:800;letter-spacing:.07em}.card-kicker span{display:flex;align-items:center;gap:6px}.card-kicker em{font-style:normal;color:#9a6700;background:#fff2c9;padding:3px 7px;border-radius:10px;text-transform:uppercase}.assignment-card h2{font-size:25px;letter-spacing:-.03em;margin:22px 0 4px}.pu-code{font-family:ui-monospace,monospace;color:#52719a;font-size:13px;margin:0}.coordinate-state{border-top:1px solid #d9e6f4;margin-top:23px;padding-top:18px;display:flex;gap:11px}.state-icon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;flex:none}.verified{background:#e1f9ed;color:#14804a}.pending{background:#fff1d2;color:#a45d00}.coordinate-state strong,.coordinate-state span{display:block}.coordinate-state strong{font-size:14px}.coordinate-state span{font-size:12px;color:#64748b;line-height:1.5;margin-top:2px}.verify-action,.secondary-action{width:100%;border:0;border-radius:9px;margin-top:21px;padding:12px 14px;color:#fff;font-weight:800;display:flex;justify-content:center;gap:8px;align-items:center;cursor:pointer}.verify-action{background:#b66a00}.secondary-action{background:#1764c0}.action-card{padding:23px}.report-action,.checkin-action{width:100%;border:0;border-radius:11px;padding:15px;margin-top:14px;color:#fff;text-align:left;display:flex;align-items:center;gap:12px;cursor:pointer}.report-action{background:#bb2b3d}.checkin-action{background:#087a62}.report-action:disabled,.checkin-action:disabled{background:#b1bcc9;cursor:not-allowed}.action-icon{background:#ffffff26;padding:9px;border-radius:9px;display:grid}.report-action div:nth-child(2),.checkin-action div:nth-child(2){flex:1}.action-card strong,.action-card span{display:block}.action-card strong{font-size:15px}.action-card span{font-size:11px;color:#ffffffc7;margin-top:3px}.assignment-link{border:0;background:transparent;color:#316aa9;font-size:13px;font-weight:800;padding:19px 0 0;display:flex;gap:8px;cursor:pointer}.operations-row{margin-top:20px}.sync-card,.guide-card{padding:22px}.sync-title{display:flex;align-items:center;gap:8px;color:#214467}.sync-title span{margin-left:auto;border-radius:12px;background:#edf5ff;color:#2764a6;font-size:11px;font-weight:800;padding:4px 8px}.sync-metrics{display:flex;gap:32px;margin:22px 0 13px}.metric strong,.metric span{display:block}.metric strong{font-size:25px}.metric span,.sync-card p{font-size:11px;color:#718096;margin-top:2px}.sync-card p{font-size:12px;margin:0}.guide-card ol{list-style:none;padding:0;margin:13px 0 0;counter-reset:item}.guide-card li{font-size:13px;padding:9px 0;border-top:1px solid #edf1f6;color:#53657a}.guide-card li:before{counter-increment:item;content:counter(item);display:inline-grid;place-items:center;width:20px;height:20px;margin-right:9px;border-radius:50%;background:#e8eef6;color:#53728e;font-size:10px;font-weight:800}.guide-card li.done:before{content:'✓';background:#d8f7e6;color:#13824b}.muted{color:#64748b;line-height:1.5}.skeleton{height:174px;margin-top:16px;border-radius:10px;background:#edf2f7}.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:760px){.field-header{height:65px;padding:0 16px}.connection{font-size:0;padding:8px}.connection svg{margin:0}.field-main{padding:29px 16px 44px}.intro{align-items:flex-start;flex-direction:column;margin-bottom:20px}.intro h1{font-size:29px}.dashboard-grid,.operations-row{grid-template-columns:1fr}.assignment-card,.action-card{padding:20px}.operations-row{margin-top:14px}.refresh{width:100%;justify-content:center}.sync-metrics{justify-content:space-between;gap:8px}.guide-card{display:none}}`;

@@ -14,6 +14,35 @@
   --text-muted: #94a3b8;
 }
 
+:root[data-theme='light'] { color-scheme: light; }
+:root[data-theme='dark'] { color-scheme: dark; --primary:#060a14; --secondary:#142033; --text-main:#f8fafc; --text-muted:#94a3b8; }
+
+.theme-toggle { border:1px solid rgba(148,163,184,.35); background:rgba(255,255,255,.08); color:inherit; border-radius:9px; padding:8px 10px; display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:800; cursor:pointer; }
+.theme-toggle:hover { background:rgba(148,163,184,.2); }
+:root[data-theme='dark'] .field-shell,:root[data-theme='dark'] .report-shell { background:#07111f; color:#e7eef8; }
+:root[data-theme='dark'] .assignment-card,:root[data-theme='dark'] .action-card,:root[data-theme='dark'] .sync-card,:root[data-theme='dark'] .guide-card,:root[data-theme='dark'] .incident-form,:root[data-theme='dark'] .location-panel { background:#101d2e; border-color:#263c55; box-shadow:none; }
+:root[data-theme='dark'] .assignment-card { background:linear-gradient(135deg,#111f32,#0e2940); }
+:root[data-theme='dark'] .intro p:not(.eyebrow),:root[data-theme='dark'] .coordinate-state span,:root[data-theme='dark'] .form-head p,:root[data-theme='dark'] .report-intro>p:last-child,:root[data-theme='dark'] .muted { color:#a8b7ca; }
+:root[data-theme='dark'] .assignment-card h2,:root[data-theme='dark'] .form-head h2,:root[data-theme='dark'] .location-head h2 { color:#f2f7ff; }
+:root[data-theme='dark'] .category-grid button,:root[data-theme='dark'] .description-label textarea { background:#15243a; color:#dce8f7; border-color:#304662; }
+:root[data-theme='dark'] .evidence-note { background:#11263d; color:#b5c9df; }
+:root[data-theme='dark'] .refresh { background:#15243a; color:#dce8f7; border-color:#304662; }
+
+/* Situation Room pages use Tailwind utility colors. These scoped overrides let
+   existing pages switch themes without duplicating each route's markup. */
+.admin-shell.dark { background:#060a14; color:#f1f5f9; }
+.admin-shell.light { background:#f2f6fb; color:#152238; }
+.admin-shell.light .text-white { color:#17263b !important; }
+.admin-shell.light .text-slate-100,.admin-shell.light .text-slate-200 { color:#273b55 !important; }
+.admin-shell.light .text-slate-300,.admin-shell.light .text-slate-400 { color:#61738a !important; }
+.admin-shell.light .text-slate-500 { color:#74859a !important; }
+.admin-shell.light .bg-\[\#060a14\],.admin-shell.light .bg-slate-950,.admin-shell.light .bg-slate-900 { background-color:#f2f6fb !important; }
+.admin-shell.light .bg-slate-800,.admin-shell.light .bg-slate-800\/60,.admin-shell.light .bg-slate-800\/50 { background-color:#ffffff !important; }
+.admin-shell.light .border-slate-800,.admin-shell.light .border-slate-700,.admin-shell.light .border-gray-700 { border-color:#d9e3ee !important; }
+.admin-shell.light .bg-gray-950,.admin-shell.light .bg-gray-900 { background-color:#f7f9fc !important; }
+.admin-shell.light .bg-gray-800 { background-color:#fff !important; }
+.admin-shell.light input,.admin-shell.light select { background:#fff !important; color:#1a2b40 !important; border-color:#cfdae6 !important; }
+
 * {
   margin: 0;
   padding: 0;

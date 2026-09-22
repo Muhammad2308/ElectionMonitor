@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
+import { ThemeToggle } from '../UI/ThemeToggle';
 
 const MobileTopBar: React.FC = () => {
   const user = useAuthStore((s) => s.user);
@@ -21,6 +22,7 @@ const MobileTopBar: React.FC = () => {
           </p>
         </div>
       </div>
+      <ThemeToggle />
       <button
         onClick={() => { logout(); navigate('/login'); }}
         aria-label="Log out"

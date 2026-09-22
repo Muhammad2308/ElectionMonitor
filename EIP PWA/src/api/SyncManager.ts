@@ -1,17 +1,28 @@
 import { db, type QueuedAction } from '../storage/db';
 import api from '../api';
+import { useSyncStore } from '../store/useSyncStore';
+import axios from 'axios';
 
 class SyncManager {
     private isProcessing = false;
     private retryLimits = [30000, 120000, 600000, 3600000]; // 30s, 2m, 10m, 1h
 
-    public async init() {
-        // Start the sync loop
-        setInterval(() => this.processQueue(), 15000);
-        this.processQueue();
+    public init() {
+        window.addEventListener('online', () => void this.processQueue());
+        window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') void this.processQueue();
+        });
+        window.setInterval(() => void this.processQueue(), 15_000);
+        void this.refreshStatus();
+        void this.processQueue();
     }
 
-    public async queueAction(type: QueuedAction['type'], payload: any, priority = 1) {
+    public async queueAction(
+        type: QueuedAction['type'],
+        payload: Record<string, unknown>,
+        priority = 100,
+        dependsOnIncidentId?: string,
+    ) {
         const action: QueuedAction = {
             id: crypto.randomUUID(),
             type,
@@ -20,14 +31,17 @@ class SyncManager {
             priority,
             retry_count: 0,
             created_at: new Date().toISOString(),
+            depends_on_incident_id: dependsOnIncidentId,
         };
         await db.queued_actions.add(action);
-        this.processQueue();
+        await this.refreshStatus();
+        void this.processQueue();
     }
 
     private async processQueue() {
         if (this.isProcessing || !navigator.onLine) return;
         this.isProcessing = true;
+        useSyncStore.getState().setSyncing(true);
 
         try {
             const actions = await db.queued_actions
@@ -36,9 +50,14 @@ class SyncManager {
                 .sortBy('priority');
 
             for (const action of actions) {
+                if (action.depends_on_incident_id) {
+                    const incident = await db.incidents.get(action.depends_on_incident_id);
+                    if (!incident || incident.sync_status !== 'synced') continue;
+                }
+
                 // If failed, check if we should retry based on exponential backoff
                 if (action.status === 'failed') {
-                    const lastRetryTime = new Date(action.created_at).getTime(); // Simplified for prototype
+                    const lastRetryTime = new Date(action.last_attempt_at ?? action.created_at).getTime();
                     const waitTime = this.retryLimits[Math.min(action.retry_count, this.retryLimits.length - 1)];
                     if (Date.now() - lastRetryTime < waitTime) continue;
                 }
@@ -47,27 +66,36 @@ class SyncManager {
             }
         } finally {
             this.isProcessing = false;
+            useSyncStore.getState().setSyncing(false);
+            await this.refreshStatus();
         }
     }
 
     private async executeAction(action: QueuedAction) {
-        await db.queued_actions.update(action.id, { status: 'syncing' });
+        await db.queued_actions.update(action.id, {
+            status: 'syncing',
+            last_attempt_at: new Date().toISOString(),
+        });
 
         try {
             let endpoint = '';
-            let method: 'post' | 'put' | 'patch' = 'post';
-            let payload = action.payload;
+            const method: 'post' | 'put' | 'patch' = 'post';
+            let payload: Record<string, unknown> | FormData = action.payload;
 
             switch (action.type) {
                 case 'CREATE_INCIDENT':
                     endpoint = '/incidents/report';
                     break;
-                case 'UPLOAD_MEDIA':
+                case 'UPLOAD_MEDIA': {
                     endpoint = '/incidents/media';
                     const formData = new FormData();
-                    Object.keys(payload).forEach(key => formData.append(key, payload[key]));
+                    Object.entries(action.payload).forEach(([key, value]) => {
+                        if (value instanceof Blob) formData.append(key, value);
+                        else if (value !== undefined && value !== null) formData.append(key, String(value));
+                    });
                     payload = formData;
                     break;
+                }
                 case 'CHECK_IN':
                     endpoint = '/observers/check-in';
                     break;
@@ -78,13 +106,35 @@ class SyncManager {
 
             await api[method](endpoint, payload);
             await db.queued_actions.update(action.id, { status: 'synced' });
-        } catch (error: any) {
-            const isConflict = error.response?.status === 409;
+            await this.markEntitySynced(action);
+        } catch (error: unknown) {
+            const isConflict = axios.isAxiosError(error) && error.response?.status === 409;
             await db.queued_actions.update(action.id, {
                 status: isConflict ? 'conflict' : 'failed',
                 retry_count: action.retry_count + 1,
-                last_error: error.message,
+                last_error: error instanceof Error ? error.message : 'Unexpected synchronization error.',
             });
+        }
+    }
+
+    private async markEntitySynced(action: QueuedAction) {
+        if (action.type === 'CREATE_INCIDENT' && typeof action.payload.id === 'string') {
+            await db.incidents.update(action.payload.id, { sync_status: 'synced' });
+        }
+        if (action.type === 'UPLOAD_MEDIA' && typeof action.payload.id === 'string') {
+            await db.media.update(action.payload.id, { sync_status: 'synced' });
+        }
+    }
+
+    private async refreshStatus() {
+        const [pendingCount, failedCount] = await Promise.all([
+            db.queued_actions.where('status').anyOf(['pending', 'syncing']).count(),
+            db.queued_actions.where('status').equals('failed').count(),
+        ]);
+        useSyncStore.getState().setPendingCount(pendingCount);
+        useSyncStore.getState().setFailedCount(failedCount);
+        if (pendingCount === 0 && failedCount === 0) {
+            useSyncStore.getState().setLastSyncTime(new Date().toISOString());
         }
     }
 }

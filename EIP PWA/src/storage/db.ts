@@ -53,12 +53,24 @@ export interface IncidentMedia {
 export interface QueuedAction {
   id: string; // UUID
   type: 'CREATE_INCIDENT' | 'UPLOAD_MEDIA' | 'CHECK_IN' | 'LOCATION_UPDATE';
-  payload: any;
+  payload: Record<string, unknown>;
   status: 'pending' | 'syncing' | 'synced' | 'failed' | 'conflict';
   priority: number;
   retry_count: number;
   last_error?: string;
+  last_attempt_at?: string;
+  /** A media upload must not run until its incident metadata has synced. */
+  depends_on_incident_id?: string;
   created_at: string;
+}
+
+export interface ObserverAssignment {
+  id: number;
+  user_id: number;
+  polling_unit_id: number;
+  election_date: string;
+  polling_unit: PollingUnit;
+  cached_at: string;
 }
 
 export class EIPDatabase extends Dexie {
@@ -69,6 +81,7 @@ export class EIPDatabase extends Dexie {
   incidents!: Table<Incident>;
   media!: Table<IncidentMedia>;
   queued_actions!: Table<QueuedAction>;
+  assignments!: Table<ObserverAssignment>;
 
   constructor() {
     super('EIPDatabase');
@@ -80,6 +93,18 @@ export class EIPDatabase extends Dexie {
       incidents: 'id, user_id, polling_unit_id, category_id, sync_status, created_at',
       media: 'id, incident_id, sync_status',
       queued_actions: 'id, type, status, priority, created_at',
+      assignments: 'id, user_id, polling_unit_id, election_date, cached_at',
+    });
+
+    this.version(3).stores({
+      states: 'id, name',
+      lgas: 'id, state_id, name',
+      wards: 'id, lga_id, name',
+      polling_units: 'id, ward_id, pu_code, name',
+      incidents: 'id, user_id, polling_unit_id, category_id, sync_status, created_at',
+      media: 'id, incident_id, sync_status',
+      queued_actions: 'id, type, status, priority, created_at, depends_on_incident_id',
+      assignments: 'id, user_id, polling_unit_id, election_date, cached_at',
     });
   }
 }

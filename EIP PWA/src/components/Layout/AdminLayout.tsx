@@ -3,6 +3,7 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import MobileTopBar from './MobileTopBar';
 import MobileBottomNav from './MobileBottomNav';
+import { useTheme } from '../../hooks/useTheme';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -31,6 +32,7 @@ const BackgroundOrbs: React.FC = () => (
 );
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
+  const { theme } = useTheme();
   return (
     <>
       <style>{`
@@ -45,7 +47,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               66%    { transform:translate(2%,4%) scale(0.95); }
           }
       `}</style>
-      <div className="flex h-screen bg-[#060a14] text-slate-100 relative overflow-hidden">
+      <div className={`admin-shell ${theme === 'dark' ? 'dark' : 'light'} flex h-screen relative overflow-hidden`}>
         <BackgroundOrbs />
         
         {/* Sidebar — desktop only */}
