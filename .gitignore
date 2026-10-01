@@ -14,3 +14,6 @@ vendor/
 # OS metadata
 .DS_Store
 Thumbs.db
+
+# Ad-hoc archives/backups — may bundle vendor/ or a real .env; never commit blind
+*.zip
