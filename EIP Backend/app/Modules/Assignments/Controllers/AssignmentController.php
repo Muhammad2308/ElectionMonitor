@@ -11,7 +11,7 @@ class AssignmentController extends Controller
     public function mine(Request $request)
     {
         $assignments = ObserverAssignment::with('pollingUnit.ward.lga.state')
-            ->where('user_id', $request->user()->id)
+            ->where('observer_id', $request->user()->id)
             ->orderByDesc('election_date')
             ->get();
 
@@ -25,7 +25,7 @@ class AssignmentController extends Controller
         $query = ObserverAssignment::with(['user', 'pollingUnit.ward.lga.state']);
 
         if ($request->filled('user_id')) {
-            $query->where('user_id', $request->integer('user_id'));
+            $query->where('observer_id', $request->integer('user_id'));
         }
 
         if ($request->filled('polling_unit_id')) {
@@ -43,7 +43,7 @@ class AssignmentController extends Controller
 
     public function store(Request $request)
     {
-        abort_unless($request->user()->can('assignments.create'), 403);
+        abort_unless($request->user()->can('assignments.manage'), 403);
 
         $data = $request->validate([
             'user_id'         => ['required', 'integer', 'exists:users,id'],
@@ -51,14 +51,18 @@ class AssignmentController extends Controller
             'election_date'   => ['required', 'date'],
         ]);
 
-        $assignment = ObserverAssignment::create($data);
+        $assignment = ObserverAssignment::create([
+            'observer_id'     => $data['user_id'],
+            'polling_unit_id' => $data['polling_unit_id'],
+            'election_date'   => $data['election_date'],
+        ]);
 
         return response()->json(['message' => 'Assignment created.', 'assignment' => $assignment], 201);
     }
 
     public function bulk(Request $request)
     {
-        abort_unless($request->user()->can('assignments.bulk-create'), 403);
+        abort_unless($request->user()->can('assignments.manage'), 403);
 
         $data = $request->validate([
             'election_date'      => ['required', 'date'],
@@ -68,7 +72,7 @@ class AssignmentController extends Controller
         ]);
 
         $rows = collect($data['assignments'])->map(fn ($row) => [
-            'user_id'         => $row['user_id'],
+            'observer_id'     => $row['user_id'],
             'polling_unit_id' => $row['polling_unit_id'],
             'election_date'   => $data['election_date'],
             'created_at'      => now(),
@@ -82,7 +86,7 @@ class AssignmentController extends Controller
 
     public function destroy(string $id)
     {
-        abort_unless(request()->user()->can('assignments.delete'), 403);
+        abort_unless(request()->user()->can('assignments.manage'), 403);
 
         $assignment = ObserverAssignment::findOrFail($id);
         $assignment->delete();
