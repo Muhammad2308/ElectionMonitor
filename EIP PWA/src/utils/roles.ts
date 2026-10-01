@@ -1,4 +1,4 @@
-export const ADMIN_ROLES = ['ward-supervisor', 'lga-supervisor', 'state-coordinator', 'national-admin', 'super-admin'];
+export const ADMIN_ROLES = ['state_admin', 'state_master_admin', 'national_master_admin', 'cybernet_superadmin'];
 
 export const isAdminRole = (role?: string | null): boolean => !!role && ADMIN_ROLES.includes(role);
 
