@@ -18,13 +18,17 @@ return new class extends Migration
         Schema::create('tenant_operational_schedules', function (Blueprint $table) {
             $table->id();
             
+            // RESTRICT: tenant removal only happens via tenant:purge, never
+            // as a side effect of deleting something else.
             $table->foreignId('tenant_id')
                   ->constrained('tenants')
-                  ->cascadeOnDelete();
-                  
+                  ->restrictOnDelete();
+
+            // RESTRICT: an election schedule must be explicitly retired/replaced,
+            // never deleted out from under schedules that reference it.
             $table->foreignId('election_schedule_id')
                   ->constrained('election_schedules')
-                  ->cascadeOnDelete();
+                  ->restrictOnDelete();
                   
             $table->foreignId('state_id')
                   ->nullable()

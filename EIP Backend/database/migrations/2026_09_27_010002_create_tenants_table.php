@@ -21,9 +21,14 @@ return new class extends Migration
             $table->id();
             $table->uuid('uuid')->unique();  // used in storage paths and broadcast channels
 
+            // RESTRICT, not CASCADE: deleting an organisation must never
+            // silently take its tenants (and everything those tenants own)
+            // with it. Tenant removal only ever happens through the
+            // tenant:purge command, after export + confirmation + the
+            // 30-day window.
             $table->foreignId('organisation_id')
                   ->constrained('organisations')
-                  ->cascadeOnDelete();
+                  ->restrictOnDelete();
 
             $table->enum('scope', ['state', 'national']);
 

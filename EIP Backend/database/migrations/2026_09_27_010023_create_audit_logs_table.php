@@ -16,10 +16,12 @@ return new class extends Migration
         Schema::create('audit_logs', function (Blueprint $table) {
             $table->id();
             
+            // RESTRICT: tenant removal only happens via tenant:purge, never
+            // as a side effect of deleting something else.
             $table->foreignId('tenant_id')
                   ->nullable() // NULL = platform action
                   ->constrained('tenants')
-                  ->cascadeOnDelete();
+                  ->restrictOnDelete();
                   
             $table->foreignId('actor_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('actor_code', 30)->nullable();
@@ -27,7 +29,9 @@ return new class extends Migration
             $table->string('action', 100);
             
             $table->string('subject_type', 100)->nullable();
-            $table->bigInteger('subject_id')->nullable();
+            // string, not bigInteger: subjects include incidents, whose id is
+            // a UUID, alongside bigint-keyed entities (users, tenants, etc).
+            $table->string('subject_id', 36)->nullable();
             
             $table->json('changes')->nullable();
             
