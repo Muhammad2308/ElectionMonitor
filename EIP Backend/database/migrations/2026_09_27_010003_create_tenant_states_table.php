@@ -20,9 +20,11 @@ return new class extends Migration
         Schema::create('tenant_states', function (Blueprint $table) {
             $table->id();
 
+            // RESTRICT: tenant removal only happens via tenant:purge, never
+            // as a side effect of deleting something else.
             $table->foreignId('tenant_id')
                   ->constrained('tenants')
-                  ->cascadeOnDelete();
+                  ->restrictOnDelete();
 
             $table->foreignId('state_id')
                   ->constrained('states')

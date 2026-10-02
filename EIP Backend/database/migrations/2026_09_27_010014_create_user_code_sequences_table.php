@@ -15,9 +15,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user_code_sequences', function (Blueprint $table) {
+            // RESTRICT: tenant removal only happens via tenant:purge, never
+            // as a side effect of deleting something else.
             $table->foreignId('tenant_id')
                   ->constrained('tenants')
-                  ->cascadeOnDelete();
+                  ->restrictOnDelete();
                   
             $table->string('scope_key', 20); // "OB", "SA", "KD-SM"
             

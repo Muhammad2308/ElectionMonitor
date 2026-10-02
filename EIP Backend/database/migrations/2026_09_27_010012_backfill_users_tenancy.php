@@ -2,27 +2,65 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 /**
  * M12 — backfill_users_tenancy
  *
- * Data migration script.
- * 1. Creates a 'Legacy Demo' organisation and a 'Legacy State' tenant.
- * 2. Moves all existing users (except cybernet_superadmin equivalents) into this tenant.
- * 3. Assigns role_type and user_code so constraints can be applied in M13.
+ * Maps existing users into the v3 tenancy model using their actual prior
+ * Spatie role assignment (model_has_roles), not a blanket "lowest id becomes
+ * superadmin, everyone else becomes observer" guess. Any user whose legacy
+ * role can't be resolved aborts the migration for manual review — demoting a
+ * real admin/coordinator to observer with no record of what they were is the
+ * kind of mistake that shouldn't have a silent default.
  */
 return new class extends Migration
 {
+    private const ROLE_MAP = [
+        'super-admin'       => 'cybernet_superadmin',
+        'national-admin'    => 'national_master_admin',
+        'state-coordinator' => 'state_master_admin',
+        'lga-supervisor'    => 'state_admin',
+        'ward-supervisor'   => 'observer',
+        'observer'          => 'observer',
+    ];
+
     public function up(): void
     {
-        // 1. Check if there are existing users to backfill
         $userCount = DB::table('users')->count();
         if ($userCount === 0) {
             return;
         }
 
-        // 2. Create Legacy Organisation
+        $legacyRoleByUserId = [];
+        if (Schema::hasTable('model_has_roles') && Schema::hasTable('roles')) {
+            $legacyRoleByUserId = DB::table('model_has_roles')
+                ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+                ->where('model_has_roles.model_type', 'App\\Models\\User')
+                ->pluck('roles.name', 'model_has_roles.model_id')
+                ->toArray();
+        }
+
+        $users = DB::table('users')->orderBy('id')->get();
+
+        $unresolved = [];
+        foreach ($users as $user) {
+            $legacyRole = $legacyRoleByUserId[$user->id] ?? null;
+            if ($legacyRole === null || ! isset(self::ROLE_MAP[$legacyRole])) {
+                $unresolved[] = $user->id;
+            }
+        }
+
+        if ($unresolved !== []) {
+            throw new \RuntimeException(
+                'Cannot backfill users.role_type automatically: user id(s) ' .
+                implode(', ', $unresolved) .
+                ' have no recognised legacy Spatie role assignment. ' .
+                'Assign a role (or set role_type manually) for these users before re-running this migration.'
+            );
+        }
+
         $orgId = DB::table('organisations')->insertGetId([
             'uuid' => Str::uuid(),
             'name' => 'Legacy Demo Organisation',
@@ -34,7 +72,6 @@ return new class extends Migration
             'updated_at' => now(),
         ]);
 
-        // 3. Create Legacy Tenant (assuming state scope, using first state or null workaround)
         $stateId = DB::table('states')->first()?->id;
 
         $tenantId = DB::table('tenants')->insertGetId([
@@ -50,41 +87,55 @@ return new class extends Migration
             'updated_at' => now(),
         ]);
 
-        // 4. Update users (simplistic mapping, assuming first user is superadmin)
-        $users = DB::table('users')->orderBy('id')->get();
-        $isFirst = true;
+        // A tenant may only be 'active' when a paid licence covers today
+        // (TenantLicenceService's own rule) — don't bypass that invariant
+        // just because this tenant was created by a backfill script.
+        DB::table('tenant_licences')->insert([
+            'tenant_id' => $tenantId,
+            'election_period' => 'Legacy backfill',
+            'fee_basis' => 'standard_state',
+            'licence_fee' => 0,
+            'currency' => 'NGN',
+            'status' => 'paid',
+            'paid_at' => now(),
+            'valid_from' => now()->subDay(),
+            'valid_to' => now()->addYears(10),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
+        $sequence = 1;
         foreach ($users as $user) {
-            if ($isFirst) {
-                // Cybernet Superadmin
+            $roleType = self::ROLE_MAP[$legacyRoleByUserId[$user->id]];
+
+            if ($roleType === 'cybernet_superadmin') {
                 DB::table('users')->where('id', $user->id)->update([
-                    'role_type' => 'cybernet_superadmin',
+                    'role_type' => $roleType,
                     // organisation_id and tenant_id remain NULL
                 ]);
-                $isFirst = false;
-            } else {
-                // Map everyone else to observer for now, or use existing role logic if Spatie tables exist
-                // Assuming observer as safe default for backfill
-                DB::table('users')->where('id', $user->id)->update([
-                    'organisation_id' => $orgId,
-                    'tenant_id' => $tenantId,
-                    'role_type' => 'observer',
-                    'user_code' => 'LEG-ST-OB-' . str_pad($user->id, 5, '0', STR_PAD_LEFT),
-                ]);
+                continue;
             }
+
+            DB::table('users')->where('id', $user->id)->update([
+                'organisation_id' => $orgId,
+                'tenant_id' => $tenantId,
+                'role_type' => $roleType,
+                'user_code' => 'LEG-ST-' . strtoupper(substr($roleType, 0, 2)) . '-' . str_pad($sequence, 5, '0', STR_PAD_LEFT),
+            ]);
+            $sequence++;
         }
     }
 
     public function down(): void
     {
-        // Data migration down is usually empty or just clears the added fields
         DB::table('users')->update([
             'organisation_id' => null,
             'tenant_id' => null,
             'user_code' => null,
             'role_type' => null,
         ]);
-        
+
+        DB::table('tenant_licences')->where('election_period', 'Legacy backfill')->delete();
         DB::table('tenants')->where('slug', 'legacy-demo-tenant')->delete();
         DB::table('organisations')->where('short_code', 'LEG')->delete();
     }

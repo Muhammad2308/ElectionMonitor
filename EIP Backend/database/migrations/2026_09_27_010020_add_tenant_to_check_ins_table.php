@@ -18,7 +18,9 @@ return new class extends Migration
 
         Schema::table('check_ins', function (Blueprint $table) {
             $table->uuid('uuid')->unique()->nullable()->after('id');
-            $table->foreignId('tenant_id')->nullable()->after('uuid')->constrained('tenants')->cascadeOnDelete();
+            // RESTRICT: tenant removal only happens via tenant:purge, never
+            // as a side effect of deleting something else.
+            $table->foreignId('tenant_id')->nullable()->after('uuid')->constrained('tenants')->restrictOnDelete();
             
             $table->renameColumn('user_id', 'observer_id');
             
@@ -52,14 +54,28 @@ return new class extends Migration
     {
         Schema::table('check_ins', function (Blueprint $table) {
             $table->dropForeign('fk_check_ins_observer');
-            
-            $table->renameColumn('synced_at', 'check_in_time');
+
+            // Drop the FK on tenant_id before dropping the column — MySQL
+            // refuses to drop a column while a foreign key still depends on it.
+            $table->dropForeign(['tenant_id']);
+
+            // captured_at was renamed from check_in_time in up(); reverse
+            // that rename, then drop synced_at as its own column (it was
+            // never a rename target, so it must not appear in both places).
+            $table->renameColumn('captured_at', 'check_in_time');
             $table->dropColumn(['uuid', 'tenant_id', 'accuracy_m', 'synced_at']);
-            
+
             $table->renameColumn('observer_id', 'user_id');
+        });
+
+        // Rename back before re-adding the FK: Laravel names an unnamed FK
+        // after the table it's added to, so adding it while the table was
+        // still called 'check_ins' would name it 'check_ins_user_id_foreign'
+        // instead of the 'observer_check_ins_user_id_foreign' that up() expects.
+        Schema::rename('check_ins', 'observer_check_ins');
+
+        Schema::table('observer_check_ins', function (Blueprint $table) {
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
-        
-        Schema::rename('check_ins', 'observer_check_ins');
     }
 };

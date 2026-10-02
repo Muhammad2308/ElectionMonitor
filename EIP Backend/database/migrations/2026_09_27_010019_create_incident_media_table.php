@@ -8,58 +8,85 @@ use Illuminate\Support\Facades\Schema;
 /**
  * M19 — create_incident_media_table
  *
- * Replaces the old incident_media with a tenant-scoped version.
- * Assuming the old one is dropped or renamed if it exists, or we just drop it and recreate.
+ * Rebuilds incident_media as tenant-scoped. If a pre-v3 incident_media table
+ * exists, its rows are migrated into the new shape (not dropped outright):
+ * old columns were media_type/file_path/file_hash/metadata; new columns are
+ * storage_path/mime_type/size_bytes/sha256. incidents.id is a UUID, so
+ * incident_media.id and .incident_id are UUIDs too, matching the original
+ * 2026_06_14_164254 schema.
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        // Drop the old one if it exists
-        Schema::dropIfExists('incident_media');
+        $hasLegacyTable = Schema::hasTable('incident_media');
+
+        if ($hasLegacyTable) {
+            Schema::rename('incident_media', 'incident_media_legacy');
+        }
 
         Schema::create('incident_media', function (Blueprint $table) {
-            $table->id();
-            
+            $table->uuid('id')->primary();
+
+            // RESTRICT: tenant removal only happens via tenant:purge, never
+            // as a side effect of deleting something else.
             $table->foreignId('tenant_id')
                   ->constrained('tenants')
-                  ->cascadeOnDelete();
-                  
-            $table->uuid('incident_id'); // If incidents.id is uuid in old schema, adjust if needed.
-                                         // Let's assume incidents PK is id(bigint) based on M18 design.
-            // Adjusting based on v3 design: incident_id should be bigint
-        });
-        
-        // Correct recreation:
-        Schema::dropIfExists('incident_media');
-        
-        Schema::create('incident_media', function (Blueprint $table) {
-            $table->id();
-            
-            $table->foreignId('tenant_id')
-                  ->constrained('tenants')
-                  ->cascadeOnDelete();
-                  
-            // Ensure this type matches incidents.id. 
-            // In v3 it's UUID or BigInt depending on how it was originally created. 
-            // In the live system (2026_06_14_164254) incidents.id is UUID. 
-            // WAIT, looking at 2026_06_14_164254, incidents.id is UUID!
-            // Let's use uuid here to match the existing schema.
-            $table->uuid('incident_id');
-            
+                  ->restrictOnDelete();
+
+            $table->uuid('incident_id'); // matches incidents.id (UUID primary key)
+
             $table->string('storage_path', 500); // tenants/{tenant_uuid}/incidents/...
             $table->string('mime_type', 100);
             $table->bigInteger('size_bytes');
             $table->char('sha256', 64);
-            
+
             $table->timestamps();
         });
-        
-        // Note: Composite foreign keys involving UUIDs depend on the DB engine,
-        // but typically you can just do:
-        // (If incidents.id is UUID, we need to ensure incidents has UNIQUE(tenant_id, id) 
-        // which was added in M18. Wait, M18 added uq_incidents_tenant_id).
-        
+
+        if ($hasLegacyTable) {
+            $legacyRows = DB::table('incident_media_legacy')
+                ->join('incidents', 'incidents.id', '=', 'incident_media_legacy.incident_id')
+                ->select('incident_media_legacy.*', 'incidents.tenant_id as incident_tenant_id')
+                ->get();
+
+            $mimeByType = [
+                'image' => 'image/jpeg',
+                'audio' => 'audio/mpeg',
+                'video' => 'video/mp4',
+            ];
+
+            foreach ($legacyRows as $row) {
+                // Legacy rows predate tenant scoping; skip any whose incident
+                // never received a tenant_id from M18 rather than guess one.
+                if ($row->incident_tenant_id === null) {
+                    continue;
+                }
+
+                $hash = $row->file_hash;
+                if (! is_string($hash) || ! preg_match('/^[a-f0-9]{64}$/i', $hash)) {
+                    // Legacy hash isn't a sha256 digest — derive one so the
+                    // column constraint holds. This is a one-time backfill of
+                    // pre-tenancy data, not a claim about file integrity.
+                    $hash = hash('sha256', (string) ($hash ?? $row->id));
+                }
+
+                DB::table('incident_media')->insert([
+                    'id' => $row->id,
+                    'tenant_id' => $row->incident_tenant_id,
+                    'incident_id' => $row->incident_id,
+                    'storage_path' => $row->file_path,
+                    'mime_type' => $mimeByType[$row->media_type] ?? 'application/octet-stream',
+                    'size_bytes' => 0, // not tracked by the legacy schema
+                    'sha256' => $hash,
+                    'created_at' => $row->created_at,
+                    'updated_at' => $row->updated_at,
+                ]);
+            }
+
+            Schema::dropIfExists('incident_media_legacy');
+        }
+
         DB::statement("
             ALTER TABLE incident_media
             ADD CONSTRAINT fk_inc_media_incident

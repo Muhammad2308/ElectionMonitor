@@ -19,9 +19,11 @@ return new class extends Migration
         Schema::create('support_access_grants', function (Blueprint $table) {
             $table->id();
 
+            // RESTRICT: tenant removal only happens via tenant:purge, never
+            // as a side effect of deleting something else.
             $table->foreignId('tenant_id')
                   ->constrained('tenants')
-                  ->cascadeOnDelete();
+                  ->restrictOnDelete();
 
             // The master admin of this tenant who authorised the access
             $table->foreignId('granted_by')

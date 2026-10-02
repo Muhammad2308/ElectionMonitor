@@ -16,10 +16,14 @@ return new class extends Migration
     {
         // Add tenant_id (nullable initially)
         Schema::table('incidents', function (Blueprint $table) {
-            $table->foreignId('tenant_id')->nullable()->after('id')->constrained('tenants')->cascadeOnDelete();
-            
+            // RESTRICT: tenant removal only happens via tenant:purge, never
+            // as a side effect of deleting something else.
+            $table->foreignId('tenant_id')->nullable()->after('id')->constrained('tenants')->restrictOnDelete();
+
             $table->renameColumn('user_id', 'reporter_id');
-            $table->foreignId('election_schedule_id')->nullable()->after('polling_unit_id')->constrained('election_schedules')->cascadeOnDelete();
+            // RESTRICT: an election schedule must be explicitly retired/replaced,
+            // never deleted out from under incidents that reference it.
+            $table->foreignId('election_schedule_id')->nullable()->after('polling_unit_id')->constrained('election_schedules')->restrictOnDelete();
             
             $table->decimal('location_accuracy_m', 8, 2)->nullable()->after('longitude');
             $table->dateTime('captured_at')->nullable()->after('location_accuracy_m');
@@ -70,7 +74,13 @@ return new class extends Migration
             $table->dropIndex('idx_incidents_tenant_pu');
             $table->dropIndex('idx_incidents_tenant_status_sev');
             $table->dropUnique('uq_incidents_tenant_id');
-            
+
+            // Drop the FKs on election_schedule_id/tenant_id before dropping
+            // those columns — MySQL refuses to drop a column while a foreign
+            // key still depends on it.
+            $table->dropForeign(['election_schedule_id']);
+            $table->dropForeign(['tenant_id']);
+
             $table->dropColumn([
                 'reviewed_by',
                 'verification_status',

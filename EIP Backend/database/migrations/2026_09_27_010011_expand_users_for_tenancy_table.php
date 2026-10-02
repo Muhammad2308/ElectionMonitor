@@ -15,8 +15,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('organisation_id')->nullable()->after('state_id')->constrained('organisations')->cascadeOnDelete();
-            $table->foreignId('tenant_id')->nullable()->after('organisation_id')->constrained('tenants')->cascadeOnDelete();
+            // RESTRICT, not CASCADE: deleting an organisation/tenant must never
+            // silently take its users with it. Removal only ever happens
+            // through the tenant:purge command.
+            $table->foreignId('organisation_id')->nullable()->after('state_id')->constrained('organisations')->restrictOnDelete();
+            $table->foreignId('tenant_id')->nullable()->after('organisation_id')->constrained('tenants')->restrictOnDelete();
             
             $table->string('user_code', 30)->unique()->nullable()->after('tenant_id');
             $table->enum('role_type', [
