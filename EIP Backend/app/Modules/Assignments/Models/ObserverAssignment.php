@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ObserverAssignment extends Model
 {
-    protected $fillable = ['observer_id', 'polling_unit_id', 'election_date'];
+    protected $fillable = ['tenant_id', 'observer_id', 'polling_unit_id', 'election_date', 'assigned_by'];
 
     protected $casts = [
         'election_date' => 'date',
