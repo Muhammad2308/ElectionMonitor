@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import 'tailwindcss';
 
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
 :root {
   --primary: #0f172a;
   --secondary: #1e293b;
@@ -43,10 +45,12 @@
 .admin-shell.light .bg-gray-800 { background-color:#fff !important; }
 .admin-shell.light input,.admin-shell.light select { background:#fff !important; color:#1a2b40 !important; border-color:#cfdae6 !important; }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
 }
 
 body {

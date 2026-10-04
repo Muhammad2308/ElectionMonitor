@@ -4,16 +4,12 @@ import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, useMap } from
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import {
-  ArrowLeft,
   CheckCircle2,
   MapPin,
   Navigation,
   AlertCircle,
   Crosshair,
   ShieldCheck,
-  Radio,
-  CloudOff,
-  LogOut,
   LocateFixed,
   Ruler,
   Building2,
@@ -26,7 +22,7 @@ import { syncManager } from '../../api/SyncManager';
 import { useMyAssignment } from '../Assignments/useMyAssignment';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useSyncStore } from '../../store/useSyncStore';
-import { ThemeToggle } from '../../components/UI/ThemeToggle';
+import { ObserverHeader } from '../../components/Observer/ObserverHeader';
 
 const MAX_DISTANCE = 500; // 500 meters geofence radius
 
@@ -156,15 +152,7 @@ export const CheckIn: React.FC = () => {
     return (
       <div className="field-shell">
         <style>{css}</style>
-        <header className="field-header">
-          <div className="brand">
-            <div className="brand-mark">E</div>
-            <div>
-              <strong>ElectWatch</strong>
-              <span>FIELD OPERATIONS</span>
-            </div>
-          </div>
-        </header>
+        <ObserverHeader subtitle="FIELD OPERATIONS" onSignOut={signOut} userInitial={user?.name} />
         <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-slate-400">
           <div className="w-10 h-10 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mb-4" />
           <p className="font-semibold text-slate-300">Loading assignment details...</p>
@@ -177,19 +165,13 @@ export const CheckIn: React.FC = () => {
     return (
       <div className="field-shell">
         <style>{css}</style>
-        <header className="field-header">
-          <button className="back-btn" onClick={() => navigate('/dashboard')}>
-            <ArrowLeft size={18} /> Back
-          </button>
-          <div className="brand">
-            <div className="brand-mark">E</div>
-            <div>
-              <strong>ElectWatch</strong>
-              <span>CHECK-IN</span>
-            </div>
-          </div>
-          <ThemeToggle />
-        </header>
+        <ObserverHeader
+          subtitle="CHECK-IN"
+          onBack={() => navigate('/dashboard')}
+          backLabel="Back to dashboard"
+          onSignOut={signOut}
+          userInitial={user?.name}
+        />
         <main className="field-main">
           <div className="empty-card">
             <AlertCircle size={44} className="text-amber-500 mb-3" />
@@ -216,31 +198,14 @@ export const CheckIn: React.FC = () => {
   return (
     <div className="field-shell">
       <style>{css}</style>
-      <header className="field-header">
-        <button className="back-btn" onClick={() => navigate('/dashboard')}>
-          <ArrowLeft size={18} /> Back to Dashboard
-        </button>
-
-        <div className="brand">
-          <div className="brand-mark">E</div>
-          <div>
-            <strong>ElectWatch</strong>
-            <span>PRESENCE VERIFICATION</span>
-          </div>
-        </div>
-
-        <div className={`connection ${isOnline ? 'online' : 'offline'}`}>
-          {isOnline ? <Radio size={14} /> : <CloudOff size={14} />}
-          {isOnline ? 'Connected' : 'Offline mode'}
-        </div>
-
-        <ThemeToggle />
-
-        <button className="profile" onClick={signOut} aria-label="Sign out">
-          <span>{user?.name?.slice(0, 1).toUpperCase() ?? 'O'}</span>
-          <LogOut size={17} />
-        </button>
-      </header>
+      <ObserverHeader
+        subtitle="PRESENCE VERIFICATION"
+        onBack={() => navigate('/dashboard')}
+        backLabel="Back to dashboard"
+        isOnline={isOnline}
+        onSignOut={signOut}
+        userInitial={user?.name}
+      />
 
       <main className="field-main">
         <section className="intro">
@@ -551,116 +516,13 @@ const css = `
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
 }
 
-.dark .field-shell {
+[data-theme='dark'] .field-shell {
   background: #0b1524;
   color: #e2e8f0;
 }
 
-.field-header {
-  height: 76px;
-  background: #071b33;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  padding: 0 clamp(20px, 5vw, 72px);
-  gap: 16px;
-  border-bottom: 1px solid #163452;
-}
-
-.back-btn {
-  background: #102a46;
-  border: 1px solid #234668;
-  color: #93c5fd;
-  border-radius: 9px;
-  padding: 8px 14px;
-  font-size: 13px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.back-btn:hover {
-  background: #1a3c61;
-  color: #fff;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-}
-
-.brand-mark {
-  width: 36px;
-  height: 36px;
-  border-radius: 11px;
-  background: linear-gradient(145deg, #2c85ff, #1745a5);
-  display: grid;
-  place-items: center;
-  font-size: 19px;
-  font-weight: 900;
-}
-
-.brand strong, .brand span {
-  display: block;
-}
-
-.brand strong {
-  font-size: 16px;
-}
-
-.brand span {
-  font-size: 9px;
-  letter-spacing: .16em;
-  color: #8ba7c6;
-  margin-top: 2px;
-}
-
-.connection {
-  margin-left: auto;
-  padding: 7px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.connection.online {
-  color: #79f0b6;
-  background: #123d38;
-}
-
-.connection.offline {
-  color: #ffd479;
-  background: #493817;
-}
-
-.profile {
-  border: 1px solid #31516f;
-  background: #102a46;
-  color: #fff;
-  border-radius: 10px;
-  padding: 5px 8px 5px 5px;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  cursor: pointer;
-}
-
-.profile span {
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-  background: #e3edff;
-  color: #154892;
-  display: grid;
-  place-items: center;
-  font-weight: 800;
+.field-shell {
+  overflow-x: hidden;
 }
 
 .field-main {
@@ -711,7 +573,7 @@ const css = `
   cursor: pointer;
 }
 
-.dark .refresh {
+[data-theme='dark'] .refresh {
   background: #1e293b;
   border-color: #334155;
   color: #cbd5e1;
@@ -730,7 +592,7 @@ const css = `
   box-shadow: 0 8px 30px #1e3b5a0b;
 }
 
-.dark .map-card, .dark .pu-info-card, .dark .telemetry-card, .dark .action-box, .dark .empty-card {
+[data-theme='dark'] .map-card, [data-theme='dark'] .pu-info-card, [data-theme='dark'] .telemetry-card, [data-theme='dark'] .action-box, [data-theme='dark'] .empty-card {
   background: #111c2e;
   border-color: #1e2d42;
   box-shadow: 0 8px 30px rgba(0,0,0,0.3);
@@ -753,7 +615,7 @@ const css = `
   margin-bottom: 14px;
 }
 
-.dark .card-kicker {
+[data-theme='dark'] .card-kicker {
   color: #8ab0d0;
 }
 
@@ -782,7 +644,7 @@ const css = `
   border: 1px solid #cbd5e1;
 }
 
-.dark .map-container {
+[data-theme='dark'] .map-container {
   border-color: #334155;
 }
 
@@ -801,7 +663,7 @@ const css = `
   font-size: 11px;
 }
 
-.dark .map-overlay-legend {
+[data-theme='dark'] .map-overlay-legend {
   background: rgba(15, 23, 42, 0.92);
   border-color: rgba(255, 255, 255, 0.1);
   color: #e2e8f0;
@@ -859,7 +721,7 @@ const css = `
   cursor: pointer;
 }
 
-.dark .recenter-map-btn {
+[data-theme='dark'] .recenter-map-btn {
   background: #1e293b;
   color: #f1f5f9;
   border-color: #475569;
@@ -874,7 +736,7 @@ const css = `
   border-top: 1px solid #e2e8f0;
 }
 
-.dark .map-telemetry {
+[data-theme='dark'] .map-telemetry {
   border-top-color: #1e293b;
 }
 
@@ -895,7 +757,7 @@ const css = `
   font-family: ui-monospace, monospace;
 }
 
-.dark .telemetry-block .value {
+[data-theme='dark'] .telemetry-block .value {
   color: #e2e8f0;
 }
 
@@ -923,7 +785,7 @@ const css = `
   margin: 0 0 16px;
 }
 
-.dark .pu-code {
+[data-theme='dark'] .pu-code {
   color: #94a3b8;
 }
 
@@ -946,7 +808,7 @@ const css = `
   margin-top: 12px;
 }
 
-.dark .distance-progress-container {
+[data-theme='dark'] .distance-progress-container {
   background: #0f172a;
   border-color: #1e293b;
 }
@@ -967,7 +829,7 @@ const css = `
   overflow: hidden;
 }
 
-.dark .progress-track {
+[data-theme='dark'] .progress-track {
   background: #334155;
 }
 
@@ -1023,7 +885,7 @@ const css = `
   border: 1px solid #f1f5f9;
 }
 
-.dark .tele-item {
+[data-theme='dark'] .tele-item {
   background: #0f172a;
   border-color: #1e293b;
 }
@@ -1037,7 +899,7 @@ const css = `
   color: #475569;
 }
 
-.dark .tele-item strong {
+[data-theme='dark'] .tele-item strong {
   color: #94a3b8;
 }
 
@@ -1047,7 +909,7 @@ const css = `
   color: #0f172a;
 }
 
-.dark .tele-item span {
+[data-theme='dark'] .tele-item span {
   color: #f8fafc;
 }
 
@@ -1118,7 +980,7 @@ const css = `
   cursor: not-allowed;
 }
 
-.dark .checkin-submit-btn.disabled {
+[data-theme='dark'] .checkin-submit-btn.disabled {
   background: #334155;
   color: #64748b;
 }
@@ -1188,6 +1050,41 @@ const css = `
   }
   .map-container {
     height: 300px;
+  }
+}
+
+@media (max-width: 640px) {
+  .field-main {
+    padding: 20px 16px 48px;
+  }
+  .intro {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .intro h1 {
+    font-size: 24px;
+  }
+  .refresh {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+  .map-overlay-legend {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    font-size: 11px;
+  }
+  .map-container {
+    height: 280px;
+  }
+  .card-kicker {
+    flex-wrap: wrap;
+    gap: 8px;
   }
 }
 `;

@@ -6,6 +6,7 @@ use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use App\Models\User;
+use Illuminate\Support\Str;
 
 class RolesAndPermissionsSeeder extends Seeder
 {
@@ -46,6 +47,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'users.delete',
             'users.assign-role',
 
+            // Polling unit location capture & review
+            'polling-units.submit',
+            'polling-units.review',
+
             // GIS
             'gis.view',
 
@@ -82,6 +87,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'incidents.view',
             'incidents.create',
             'observers.check-in',
+            'polling-units.submit',
             'notifications.view',
         ]);
 
@@ -98,6 +104,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'gis.view',
             'notifications.view',
             'reports.view',
+            'polling-units.review',
         ]);
 
         // 3. State Master Admin
@@ -125,6 +132,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'notifications.send',
             'support_access.grant',
             'audit.view',
+            'polling-units.review',
         ]);
 
         // 4. National Master Admin
@@ -153,6 +161,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'notifications.send',
             'support_access.grant',
             'audit.view',
+            'polling-units.review',
         ]);
 
         // 5. Cybernet Superadmin
@@ -167,11 +176,12 @@ class RolesAndPermissionsSeeder extends Seeder
         ]);
 
         // ── Seed default Cybernet Superadmin user ──────────────────────────
+        $password = env('SEED_ADMIN_PASSWORD') ?: Str::password(20);
         $admin = User::firstOrCreate(
             ['email' => 'admin@electwatch.com'],
             [
                 'name'      => 'Cybernet System Admin',
-                'password'  => bcrypt('EIP@Admin2026!'),
+                'password'  => $password,
                 'status'    => 'active',
                 'role_type' => 'cybernet_superadmin',
                 // organisation_id and tenant_id remain NULL
@@ -181,7 +191,10 @@ class RolesAndPermissionsSeeder extends Seeder
         setPermissionsTeamId(0);
         $admin->assignRole($cybernetSuperadmin);
 
-        $this->command->info('v3 Roles and permissions seeded successfully.');
-        $this->command->info('Default cybernet_superadmin: admin@electwatch.com / EIP@Admin2026!');
+        $this->command->info('Roles and permissions seeded.');
+        if ($admin->wasRecentlyCreated) {
+            $this->command->warn("Cybernet superadmin created: admin@electwatch.com / {$password}");
+            $this->command->warn('Shown once. Change it after first login.');
+        }
     }
 }

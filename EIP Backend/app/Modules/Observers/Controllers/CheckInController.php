@@ -5,6 +5,7 @@ namespace App\Modules\Observers\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Observers\Models\ObserverCheckIn;
 use App\Modules\ReferenceData\Models\PollingUnit;
+use App\Support\Geo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -26,7 +27,7 @@ class CheckInController extends Controller
 
         $distance = null;
         if ($pollingUnit->latitude && $pollingUnit->longitude) {
-            $distance = $this->haversineMeters(
+            $distance = Geo::distanceMeters(
                 (float) $data['latitude'],
                 (float) $data['longitude'],
                 (float) $pollingUnit->latitude,
@@ -50,17 +51,5 @@ class CheckInController extends Controller
             'message'  => 'Checked in successfully.',
             'check_in' => $checkIn,
         ], 201);
-    }
-
-    private function haversineMeters(float $lat1, float $lon1, float $lat2, float $lon2): float
-    {
-        $earthRadius = 6371000;
-        $dLat = deg2rad($lat2 - $lat1);
-        $dLon = deg2rad($lon2 - $lon1);
-
-        $a = sin($dLat / 2) ** 2 + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) ** 2;
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-
-        return round($earthRadius * $c, 2);
     }
 }
