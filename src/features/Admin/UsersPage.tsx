@@ -3,6 +3,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import AdminLayout from '../../components/Layout/AdminLayout';
 import { Badge, Button } from '../../components/UI';
 import { usersAPI, rolesAPI, type AdminUser } from './api';
+import api from '../../api';
 
 const statusVariant: Record<string, 'success' | 'default' | 'danger'> = {
   active: 'success',
@@ -128,8 +129,21 @@ const CreateUserModal: React.FC<{
   onClose: () => void;
   onCreated: () => void;
 }> = ({ roles, onClose, onCreated }) => {
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: roles[0]?.name ?? 'observer' });
+  const [form, setForm] = useState<{ name: string; email: string; password: string; role: string; state_id?: number }>({
+    name: '',
+    email: '',
+    password: '',
+    role: roles[0]?.name ?? 'observer',
+    state_id: undefined,
+  });
   const [error, setError] = useState<string | null>(null);
+
+  const states = useQuery({
+    queryKey: ['geography', 'states'],
+    queryFn: () => api.get<any[]>('/geography/states'),
+  });
+
+  const stateList = Array.isArray(states.data) ? states.data : (states.data as any)?.data || [];
 
   const createMutation = useMutation({
     mutationFn: () => usersAPI.create(form),
@@ -155,10 +169,23 @@ const CreateUserModal: React.FC<{
           <input required type="password" placeholder="Temporary password" value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             className="w-full bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all" style={{ padding: '14px 16px', fontSize: '15px' }} />
+          
+          <select
+            value={form.state_id ?? ''}
+            onChange={(e) => setForm({ ...form, state_id: e.target.value ? Number(e.target.value) : undefined })}
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all capitalize" style={{ padding: '14px 16px', fontSize: '15px' }}
+          >
+            <option value="">Select State (Optional)</option>
+            {stateList.map((s: any) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+
           <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}
             className="w-full bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all" style={{ padding: '14px 16px', fontSize: '15px' }}>
             {roles.map((r) => <option key={r.id} value={r.name}>{r.name}</option>)}
           </select>
+
           <div className="flex justify-end" style={{ gap: '12px', marginTop: '16px' }}>
             <Button type="button" variant="secondary" onClick={onClose} style={{ padding: '12px 24px', fontWeight: 'bold' }}>Cancel</Button>
             <Button type="submit" isLoading={createMutation.isPending} style={{ padding: '12px 24px', fontWeight: 'bold' }}>Create User</Button>
