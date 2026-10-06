@@ -102,6 +102,26 @@ class SyncManager {
                 case 'LOCATION_UPDATE':
                     endpoint = '/observers/location';
                     break;
+                case 'POLLING_UNIT_SUBMISSION': {
+                    endpoint = '/polling-units/submissions';
+                    const formData = new FormData();
+                    Object.entries(action.payload).forEach(([key, value]) => {
+                        if (key === 'photos' && Array.isArray(value)) {
+                            value.forEach((photo: unknown) => {
+                                if (photo instanceof Blob) {
+                                    const filename = photo instanceof File ? photo.name : 'evidence.jpg';
+                                    formData.append('photos[]', photo, filename);
+                                }
+                            });
+                        } else if (value instanceof Blob) {
+                            formData.append(key, value);
+                        } else if (value !== undefined && value !== null) {
+                            formData.append(key, String(value));
+                        }
+                    });
+                    payload = formData;
+                    break;
+                }
             }
 
             await api[method](endpoint, payload);
