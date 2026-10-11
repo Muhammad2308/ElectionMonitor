@@ -1,7 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { CalendarDays, MapPin } from 'lucide-react';
-import { formatDateTime } from '../../utils/formatting';
+import { CalendarDays, ChevronRight } from 'lucide-react';
 import { observerAPI, type UpcomingElection } from './api';
 
 const daysUntil = (iso: string) => {
@@ -21,23 +20,29 @@ const typeLabel: Record<string, string> = {
 
 export const NextElectionCard: React.FC<{ election: UpcomingElection }> = ({ election }) => {
   const days = daysUntil(election.starts_at);
+  const electionDate = new Date(election.starts_at.replace(' ', 'T'));
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-sky-500/20 bg-gradient-to-br from-blue-700 via-blue-800 to-slate-900 p-5 shadow-lg shadow-blue-950/40">
-      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-sky-200">Next election</p>
-      <div className="mt-2 flex items-end gap-3">
-        <span className="text-5xl font-black leading-none text-white tabular-nums">{days}</span>
-        <span className="pb-1 text-sm font-semibold text-sky-100">{days === 1 ? 'day' : 'days'} to go</span>
+    <section className="observer-next-election">
+      <div className="observer-election-topline">
+        <p className="observer-election-label"><CalendarDays size={12} aria-hidden="true" /> Next election</p>
+        <span>{days} {days === 1 ? 'day' : 'days'} to go</span>
       </div>
-      <h3 className="mt-3 text-base font-bold text-white">{election.title}</h3>
-      <p className="mt-1 flex items-center gap-1.5 text-xs text-sky-100">
-        <CalendarDays size={14} aria-hidden="true" /> {formatDateTime(election.starts_at)}
-        {election.state_name && (
-          <>
-            <span aria-hidden="true">·</span>
-            <MapPin size={14} aria-hidden="true" /> {election.state_name}
-          </>
-        )}
-      </p>
+      <div className="observer-election-date">
+        <CalendarDays size={14} aria-hidden="true" />
+        <div>
+          <h2>{electionDate.toLocaleDateString('en', { month: 'long', year: 'numeric' })}</h2>
+          <p>{electionDate.toLocaleDateString('en', { weekday: 'long' })} · {electionDate.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false })} WAT</p>
+        </div>
+      </div>
+      <div className="observer-election-bottom">
+        <div>
+          <h3>{election.title}</h3>
+          <p>{election.state_name ? `${election.state_name} election` : 'National election'}</p>
+        </div>
+        <button type="button" onClick={() => document.getElementById('upcoming-heading')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+          View election <ChevronRight size={13} aria-hidden="true" />
+        </button>
+      </div>
     </section>
   );
 };
@@ -52,38 +57,37 @@ export const UpcomingElections: React.FC = () => {
   const elections = query.data?.data ?? [];
 
   return (
-    <section aria-labelledby="upcoming-heading" className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <h2 id="upcoming-heading" className="text-sm font-bold uppercase tracking-wider text-slate-400">Upcoming elections</h2>
-        <span className="text-xs text-slate-500">{elections.length} scheduled</span>
+    <section aria-labelledby="upcoming-heading" className="observer-upcoming">
+      <div className="observer-section-heading">
+        <div><p className="observer-eyebrow">Calendar</p><h2 id="upcoming-heading">Upcoming elections</h2></div>
+        <button type="button" onClick={() => document.getElementById('upcoming-heading')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>View all <ChevronRight size={12} aria-hidden="true" /></button>
       </div>
 
-      {query.isLoading && <p className="text-sm text-slate-400">Loading elections…</p>}
+      {query.isLoading && <p className="observer-empty-state">Loading elections…</p>}
       {!query.isLoading && elections.length === 0 && (
-        <p className="rounded-2xl border border-slate-700/50 bg-slate-800/40 p-4 text-sm text-slate-400">
+        <p className="observer-empty-state">
           No upcoming elections are scheduled for your state yet.
         </p>
       )}
 
-      <ol className="flex flex-col gap-2">
+      <ol className="observer-election-list">
         {elections.map((e) => (
-          <li key={e.id} className="flex items-start gap-3 rounded-2xl border border-slate-700/50 bg-slate-800/40 p-4">
-            <div className="flex w-12 shrink-0 flex-col items-center rounded-xl bg-blue-600/15 py-1.5 text-center">
-              <span className="text-[10px] font-bold uppercase text-sky-300">
+          <li key={e.id}>
+            <div className="observer-election-day">
+              <span>
                 {new Date(e.starts_at.replace(' ', 'T')).toLocaleString('en', { month: 'short' })}
               </span>
-              <span className="text-lg font-black text-white">{new Date(e.starts_at.replace(' ', 'T')).getDate()}</span>
+              <strong>{new Date(e.starts_at.replace(' ', 'T')).getDate().toString().padStart(2, '0')}</strong>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-white">{e.title}</p>
-              <p className="text-xs text-slate-400">
+            <div className="observer-election-copy">
+              <p>{e.title}</p>
+              <span>
                 {typeLabel[e.election_type] ?? e.election_type}
                 {e.state_name ? ` · ${e.state_name}` : ' · National'}
-              </p>
+              </span>
             </div>
-            <span className="shrink-0 rounded-full bg-slate-700/60 px-2.5 py-1 text-[11px] font-semibold text-slate-300">
-              {daysUntil(e.starts_at)}d
-            </span>
+            <span className={`observer-election-status ${e.status === 'active' ? 'is-active' : ''}`}>{e.status === 'active' ? 'Active' : e.status === 'postponed' ? 'Postponed' : 'Upcoming'}</span>
+            <ChevronRight className="observer-election-arrow" size={14} aria-hidden="true" />
           </li>
         ))}
       </ol>

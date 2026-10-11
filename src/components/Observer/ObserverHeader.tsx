@@ -26,7 +26,7 @@ export const ObserverHeader: React.FC<ObserverHeaderProps> = ({
   onSignOut,
   userInitial = 'O',
 }) => (
-  <header className="sticky top-0 z-40 border-b border-[#1d3d5e] bg-[#071b33] text-white">
+  <header className="observer-mobile-header sticky top-0 z-40 border-b border-[#1d3d5e] bg-[#071b33] text-white">
     <div className="mx-auto flex h-14 w-full max-w-5xl min-w-0 items-center gap-2 px-3 sm:h-16 sm:gap-3 sm:px-6">
       {onBack && (
         <button
