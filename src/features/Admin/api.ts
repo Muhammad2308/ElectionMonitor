@@ -58,7 +58,7 @@ export interface PaginatedResponse<T> {
 }
 
 export const usersAPI = {
-    list: (params: { page?: number; role?: string; status?: string; search?: string } = {}): Promise<PaginatedResponse<AdminUser>> =>
+    list: (params: { page?: number; role?: string; status?: string; search?: string; state_id?: number } = {}): Promise<PaginatedResponse<AdminUser>> =>
         api.get('/users', { params }),
     create: (data: { name: string; email: string; phone?: string; password: string; state_id?: number; role: string }) =>
         api.post('/users', data),
