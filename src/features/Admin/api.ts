@@ -40,6 +40,8 @@ export interface AdminUser {
     phone: string | null;
     state_id: number | null;
     state_name: string | null;
+    lga_id?: number | null;
+    lga_name?: string | null;
     status: 'active' | 'inactive' | 'suspended';
     role: string | null;
     roles: string[];
@@ -60,7 +62,7 @@ export interface PaginatedResponse<T> {
 export const usersAPI = {
     list: (params: { page?: number; role?: string; status?: string; search?: string; state_id?: number } = {}): Promise<PaginatedResponse<AdminUser>> =>
         api.get('/users', { params }),
-    create: (data: { name: string; email: string; phone?: string; password: string; state_id?: number; role: string }) =>
+    create: (data: { name: string; email: string; phone?: string; password: string; state_id?: number; lga_id?: number; role: string }) =>
         api.post('/users', data),
     suspend: (id: number) => api.post(`/users/${id}/suspend`),
     assignRole: (id: number, role: string) => api.post(`/users/${id}/assign-role`, { role }),

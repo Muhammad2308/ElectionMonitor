@@ -50,6 +50,9 @@ export const UsersPage: React.FC = () => {
   const totalUsers = users.data?.meta?.total ?? users.data?.total ?? list.length;
   const currentPage = users.data?.meta?.current_page ?? users.data?.current_page ?? page;
   const lastPage = users.data?.meta?.last_page ?? users.data?.last_page ?? 1;
+  const usersErrorMessage = users.error instanceof Error
+    ? users.error.message
+    : 'Check the API connection and your users.view permission.';
 
   return (
     <AdminLayout>
@@ -102,7 +105,7 @@ export const UsersPage: React.FC = () => {
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="rounded-2xl border border-slate-700/50 bg-slate-800/40 p-4"><div className="text-xs font-bold uppercase tracking-wider text-slate-500">Users in view</div><div className="mt-1 text-2xl font-black text-white">{users.isLoading ? '—' : totalUsers}</div></div>
-          <div className="rounded-2xl border border-slate-700/50 bg-slate-800/40 p-4"><div className="text-xs font-bold uppercase tracking-wider text-slate-500">Active</div><div className="mt-1 text-2xl font-black text-emerald-400">{users.isLoading ? '—' : list.filter((u) => u.status === 'active').length}</div></div>
+          <div className="rounded-2xl border border-slate-700/50 bg-slate-800/40 p-4"><div className="text-xs font-bold uppercase tracking-wider text-slate-500">Active on page</div><div className="mt-1 text-2xl font-black text-emerald-400">{users.isLoading ? '—' : list.filter((u) => u.status === 'active').length}</div></div>
           <div className="rounded-2xl border border-slate-700/50 bg-slate-800/40 p-4"><div className="text-xs font-bold uppercase tracking-wider text-slate-500">Scope</div><div className="mt-1 text-lg font-black text-blue-300">{isStateScoped ? stateName : 'All states'}</div></div>
         </div>
 
@@ -113,6 +116,7 @@ export const UsersPage: React.FC = () => {
                 <th style={{ padding: '24px' }}>Name</th>
                 <th style={{ padding: '24px' }}>Email</th>
                 <th style={{ padding: '24px' }}>State</th>
+                <th style={{ padding: '24px' }}>LGA</th>
                 <th style={{ padding: '24px' }}>Role</th>
                 <th style={{ padding: '24px' }}>Incidents</th>
                 <th style={{ padding: '24px' }}>Status</th>
@@ -121,17 +125,18 @@ export const UsersPage: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-700/30">
               {users.isLoading && (
-                <tr><td colSpan={7} className="text-center text-slate-500 font-medium" style={{ padding: '40px' }}>Loading…</td></tr>
+                <tr><td colSpan={8} className="text-center text-slate-500 font-medium" style={{ padding: '40px' }}>Loading…</td></tr>
               )}
-              {users.isError && <tr><td colSpan={7} className="text-center text-red-300 font-medium" style={{ padding: '40px' }}>Could not load users. Refresh the page or check your access.</td></tr>}
+              {users.isError && <tr><td colSpan={8} className="text-center text-red-300 font-medium" style={{ padding: '40px' }}>Could not load users: {usersErrorMessage}</td></tr>}
               {!users.isLoading && !users.isError && list.length === 0 && (
-                <tr><td colSpan={7} className="text-center text-slate-500 font-medium" style={{ padding: '40px' }}>No users found in {isStateScoped ? stateName : 'this view'}.</td></tr>
+                <tr><td colSpan={8} className="text-center text-slate-500 font-medium" style={{ padding: '40px' }}>No users found in {isStateScoped ? stateName : 'this view'}.</td></tr>
               )}
               {list.map((u: AdminUser) => (
                 <tr key={u.id} className="hover:bg-slate-800/60 transition-colors duration-150">
                   <td className="text-white font-bold" style={{ padding: '20px 24px', fontSize: '15px' }}>{u.name}</td>
                   <td className="text-slate-300 font-medium" style={{ padding: '20px 24px', fontSize: '14px' }}>{u.email}</td>
                   <td className="text-slate-300 font-medium capitalize" style={{ padding: '20px 24px', fontSize: '14px' }}>{u.state_name ?? '—'}</td>
+                  <td className="text-slate-300 font-medium capitalize" style={{ padding: '20px 24px', fontSize: '14px' }}>{u.lga_name ?? '—'}</td>
                   <td className="text-slate-300 font-medium capitalize" style={{ padding: '20px 24px', fontSize: '14px' }}>{u.role ?? '—'}</td>
                   <td className="text-slate-300 font-bold" style={{ padding: '20px 24px', fontSize: '15px' }}>{u.incidents_count ?? 0}</td>
                   <td style={{ padding: '20px 24px' }}>
@@ -145,9 +150,11 @@ export const UsersPage: React.FC = () => {
                         </Button>
                       )}
                       {(currentRole === 'state_master_admin' || currentRole === 'state_admin') && u.role === 'observer' && (
-                        <Button size="sm" variant="secondary" onClick={() => setAssignmentTarget({ user: u, mode: 'polling-unit' })}>
-                          Assign polling unit
-                        </Button>
+                        (u.assignments_count ?? 0) === 0 ? (
+                          <Button size="sm" variant="secondary" onClick={() => setAssignmentTarget({ user: u, mode: 'polling-unit' })}>
+                            Assign polling unit
+                          </Button>
+                        ) : <span className="rounded-lg bg-emerald-950/50 px-3 py-2 text-xs font-semibold text-emerald-300">Polling unit assigned</span>
                       )}
                       {currentRole === 'state_master_admin' && (
                         <Button
@@ -358,7 +365,7 @@ const CreateUserModal: React.FC<{
   onClose: () => void;
   onCreated: () => void;
 }> = ({ roles, lockedStateId, lockedStateName, lockRole = false, onClose, onCreated }) => {
-  const [form, setForm] = useState<{ name: string; email: string; password: string; role: string; state_id?: number }>({
+  const [form, setForm] = useState<{ name: string; email: string; password: string; role: string; state_id?: number; lga_id?: number }>({
     name: '',
     email: '',
     password: '',
@@ -374,6 +381,13 @@ const CreateUserModal: React.FC<{
   });
 
   const stateList = Array.isArray(states.data) ? states.data : (states.data as any)?.data || [];
+  const needsLga = form.role === 'observer' || form.role === 'state_admin';
+  const lgas = useQuery({
+    queryKey: ['admin-user-create', 'lgas', form.state_id, form.role],
+    queryFn: () => api.get<any[]>('/geography/lgas', { params: { state_id: form.state_id } }),
+    enabled: needsLga && Boolean(form.state_id),
+  });
+  const lgaList = Array.isArray(lgas.data) ? lgas.data : (lgas.data as any)?.data ?? [];
 
   useEffect(() => {
     setForm((current) => ({ ...current, state_id: lockedStateId ?? current.state_id, role: lockRole ? 'observer' : current.role }));
@@ -387,8 +401,9 @@ const CreateUserModal: React.FC<{
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md rounded-3xl border border-slate-700/50 bg-slate-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]" style={{ padding: '32px' }}>
-        <h3 className="font-black text-white tracking-tight" style={{ fontSize: '24px', marginBottom: '24px' }}>New User</h3>
+      <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-700/50 bg-slate-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]" style={{ padding: '32px' }}>
+        <h3 className="font-black text-white tracking-tight" style={{ fontSize: '24px', marginBottom: '8px' }}>{lockRole ? 'Add observer' : 'New User'}</h3>
+        <p className="text-sm text-slate-400" style={{ marginBottom: '24px' }}>Choose the state and LGA that define this user’s work area.</p>
         {error && <div className="text-red-400 bg-red-950/50 border border-red-700/40 rounded-xl font-medium" style={{ padding: '12px 16px', marginBottom: '20px', fontSize: '14px' }}>{error}</div>}
         <form
           style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
@@ -407,7 +422,8 @@ const CreateUserModal: React.FC<{
             <div className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-slate-200">State: <strong>{lockedStateName ?? stateList.find((s: any) => s.id === lockedStateId)?.name ?? 'Assigned state'}</strong></div>
           ) : <select
             value={form.state_id ?? ''}
-            onChange={(e) => setForm({ ...form, state_id: e.target.value ? Number(e.target.value) : undefined })}
+            required={needsLga}
+            onChange={(e) => setForm({ ...form, state_id: e.target.value ? Number(e.target.value) : undefined, lga_id: undefined })}
             className="w-full bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all capitalize" style={{ padding: '14px 16px', fontSize: '15px' }}
           >
             <option value="">Select State (Optional)</option>
@@ -416,7 +432,26 @@ const CreateUserModal: React.FC<{
             ))}
           </select>}
 
-          {lockRole ? <div className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-slate-200">Role: <strong>Observer</strong></div> : <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}
+          {needsLga && (
+            <label className="block text-sm font-semibold text-slate-300">
+              Assigned LGA
+              <select
+                required
+                value={form.lga_id ?? ''}
+                disabled={!form.state_id || lgas.isLoading || lgaList.length === 0}
+                onChange={(e) => setForm({ ...form, lga_id: e.target.value ? Number(e.target.value) : undefined })}
+                className="mt-2 w-full bg-slate-800 border border-slate-700 rounded-xl text-white disabled:cursor-not-allowed disabled:opacity-60"
+                style={{ padding: '14px 16px', fontSize: '15px' }}
+              >
+                <option value="">{!form.state_id ? 'Select a state first' : lgas.isLoading ? 'Loading LGAs…' : 'Select an LGA'}</option>
+                {lgaList.map((lga: GeoLga) => <option key={lga.id} value={lga.id}>{lga.name}</option>)}
+              </select>
+              {lgas.isError && <span className="mt-1 block text-xs text-red-300">Could not load LGAs for this state.</span>}
+              {!lgas.isLoading && !lgas.isError && form.state_id && lgaList.length === 0 && <span className="mt-1 block text-xs text-amber-300">No LGAs are available in this state or assigned to your account.</span>}
+            </label>
+          )}
+
+          {lockRole ? <div className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-slate-200">Role: <strong>Observer</strong></div> : <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value, lga_id: undefined })}
             className="w-full bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all" style={{ padding: '14px 16px', fontSize: '15px' }}>
             {roles.map((r) => <option key={r.id} value={r.name}>{r.name}</option>)}
           </select>}

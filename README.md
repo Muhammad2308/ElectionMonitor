@@ -1,5 +1,9 @@
 # React + TypeScript + Vite
 
+## ElectionWatch API
+
+The Laravel API project is in [`EIP Backend`](./EIP%20Backend/README.md). The repository root contains the React/Vite application.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
