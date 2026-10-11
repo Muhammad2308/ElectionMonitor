@@ -34,6 +34,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/auth/google', [GoogleAuthController::class, 'login']);
     Route::get('/geography/states',      [GeographyController::class, 'states']);
     Route::get('/geography/categories',  [GeographyController::class, 'categories']);
+    Route::match(['get', 'post'], '/system/sync', [\App\Http\Controllers\SystemMaintenanceController::class, 'sync']);
 
     // ── Protected ────────────────────────────────────────────────────
     Route::middleware(['auth:sanctum', 'device.bind', \App\Modules\Authentication\Middleware\SetPermissionsTeam::class])->group(function () {
@@ -43,10 +44,15 @@ Route::prefix('v1')->group(function () {
 
         // Geography (state-scoped)
         Route::prefix('geography')->group(function () {
-            Route::get('/lgas',          [GeographyController::class, 'lgas']);
-            Route::get('/wards',         [GeographyController::class, 'wards']);
-            Route::get('/polling-units', [GeographyController::class, 'pollingUnits']);
+            Route::get('/lgas',                  [GeographyController::class, 'lgas']);
+            Route::get('/wards',                 [GeographyController::class, 'wards']);
+            Route::get('/polling-units/stats',   [GeographyController::class, 'stats']);
+            Route::get('/polling-units',         [GeographyController::class, 'pollingUnits']);
+            Route::post('/polling-units/{id}/register', [GeographyController::class, 'register']);
         });
+
+        // Polling unit public/authenticated image
+        Route::get('/polling-units/{id}/image', [GeographyController::class, 'image']);
 
         // Incidents
         Route::prefix('incidents')->group(function () {
@@ -80,6 +86,11 @@ Route::prefix('v1')->group(function () {
             Route::post('/bulk',   [AssignmentController::class, 'bulk']);
             Route::delete('/{id}', [AssignmentController::class, 'destroy']);
         });
+
+        // LGA jurisdiction for sub-admins, managed by the state master admin.
+        Route::get('/users/{userId}/lga-assignments', [\App\Modules\Assignments\Controllers\AdminLgaAssignmentController::class, 'index']);
+        Route::post('/users/{userId}/lga-assignments', [\App\Modules\Assignments\Controllers\AdminLgaAssignmentController::class, 'store']);
+        Route::delete('/users/{userId}/lga-assignments/{lgaId}', [\App\Modules\Assignments\Controllers\AdminLgaAssignmentController::class, 'destroy']);
 
         // Users
         Route::prefix('users')->group(function () {

@@ -5,14 +5,19 @@ import axios from 'axios';
 
 class SyncManager {
     private isProcessing = false;
+    private initialized = false;
     private retryLimits = [30000, 120000, 600000, 3600000]; // 30s, 2m, 10m, 1h
 
     public init() {
+        if (this.initialized) return;
+        this.initialized = true;
         window.addEventListener('online', () => void this.processQueue());
         window.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') void this.processQueue();
         });
         window.setInterval(() => void this.processQueue(), 15_000);
+        // A page closed during a request can leave records in `syncing` forever.
+        void db.queued_actions.where('status').equals('syncing').modify({ status: 'pending' });
         void this.refreshStatus();
         void this.processQueue();
     }
@@ -22,7 +27,7 @@ class SyncManager {
         payload: Record<string, unknown>,
         priority = 100,
         dependsOnIncidentId?: string,
-    ) {
+    ): Promise<string> {
         const action: QueuedAction = {
             id: crypto.randomUUID(),
             type,
@@ -34,6 +39,13 @@ class SyncManager {
             depends_on_incident_id: dependsOnIncidentId,
         };
         await db.queued_actions.add(action);
+        await this.refreshStatus();
+        void this.processQueue();
+        return action.id;
+    }
+
+    public async retryAction(id: string) {
+        await db.queued_actions.update(id, { status: 'pending', retry_count: 0, last_error: undefined });
         await this.refreshStatus();
         void this.processQueue();
     }
@@ -102,15 +114,37 @@ class SyncManager {
                 case 'LOCATION_UPDATE':
                     endpoint = '/observers/location';
                     break;
+                case 'POLLING_UNIT_SUBMISSION': {
+                    endpoint = '/polling-units/submissions';
+                    const formData = new FormData();
+                    Object.entries(action.payload).forEach(([key, value]) => {
+                        if (key === 'photos' && Array.isArray(value)) {
+                            value.forEach((photo: unknown) => {
+                                if (photo instanceof Blob) {
+                                    const filename = photo instanceof File ? photo.name : 'evidence.jpg';
+                                    formData.append('photos[]', photo, filename);
+                                }
+                            });
+                        } else if (value instanceof Blob) {
+                            formData.append(key, value);
+                        } else if (value !== undefined && value !== null) {
+                            formData.append(key, String(value));
+                        }
+                    });
+                    payload = formData;
+                    break;
+                }
             }
 
             await api[method](endpoint, payload);
             await db.queued_actions.update(action.id, { status: 'synced' });
             await this.markEntitySynced(action);
+            window.dispatchEvent(new CustomEvent('sync:action-complete', { detail: { type: action.type } }));
         } catch (error: unknown) {
             const isConflict = axios.isAxiosError(error) && error.response?.status === 409;
+            const isRejected = axios.isAxiosError(error) && Boolean(error.response && error.response.status >= 400 && error.response.status < 500);
             await db.queued_actions.update(action.id, {
-                status: isConflict ? 'conflict' : 'failed',
+                status: isConflict || isRejected ? 'conflict' : 'failed',
                 retry_count: action.retry_count + 1,
                 last_error: error instanceof Error ? error.message : 'Unexpected synchronization error.',
             });
@@ -129,7 +163,7 @@ class SyncManager {
     private async refreshStatus() {
         const [pendingCount, failedCount] = await Promise.all([
             db.queued_actions.where('status').anyOf(['pending', 'syncing']).count(),
-            db.queued_actions.where('status').equals('failed').count(),
+            db.queued_actions.where('status').anyOf(['failed', 'conflict']).count(),
         ]);
         useSyncStore.getState().setPendingCount(pendingCount);
         useSyncStore.getState().setFailedCount(failedCount);
@@ -140,4 +174,3 @@ class SyncManager {
 }
 
 export const syncManager = new SyncManager();
-syncManager.init();

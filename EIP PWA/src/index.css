@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import 'tailwindcss';
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
@@ -31,19 +31,72 @@
 :root[data-theme='dark'] .refresh { background:#15243a; color:#dce8f7; border-color:#304662; }
 
 /* Situation Room pages use Tailwind utility colors. These scoped overrides let
-   existing pages switch themes without duplicating each route's markup. */
-.admin-shell.dark { background:#060a14; color:#f1f5f9; }
-.admin-shell.light { background:#f2f6fb; color:#152238; }
-.admin-shell.light .text-white { color:#17263b !important; }
-.admin-shell.light .text-slate-100,.admin-shell.light .text-slate-200 { color:#273b55 !important; }
-.admin-shell.light .text-slate-300,.admin-shell.light .text-slate-400 { color:#61738a !important; }
-.admin-shell.light .text-slate-500 { color:#74859a !important; }
-.admin-shell.light .bg-\[\#060a14\],.admin-shell.light .bg-slate-950,.admin-shell.light .bg-slate-900 { background-color:#f2f6fb !important; }
-.admin-shell.light .bg-slate-800,.admin-shell.light .bg-slate-800\/60,.admin-shell.light .bg-slate-800\/50 { background-color:#ffffff !important; }
-.admin-shell.light .border-slate-800,.admin-shell.light .border-slate-700,.admin-shell.light .border-gray-700 { border-color:#d9e3ee !important; }
-.admin-shell.light .bg-gray-950,.admin-shell.light .bg-gray-900 { background-color:#f7f9fc !important; }
-.admin-shell.light .bg-gray-800 { background-color:#fff !important; }
-.admin-shell.light input,.admin-shell.light select { background:#fff !important; color:#1a2b40 !important; border-color:#cfdae6 !important; }
+   existing pages switch themes without duplicating each route markup. */
+.admin-shell.dark  { background:#060a14; color:#f1f5f9; }
+.admin-shell.light { background:#eef2f8; color:#152238; }
+
+/* Text */
+.admin-shell.light .text-white                            { color:#17263b !important; }
+.admin-shell.light .text-slate-100,
+.admin-shell.light .text-slate-200                        { color:#273b55 !important; }
+.admin-shell.light .text-slate-300,
+.admin-shell.light .text-slate-400                        { color:#5a6e88 !important; }
+.admin-shell.light .text-slate-500                        { color:#74859a !important; }
+.admin-shell.light .text-indigo-400                       { color:#4f5dab !important; }
+.admin-shell.light .text-emerald-400                      { color:#059669 !important; }
+
+/* Sidebar & Header */
+.admin-shell.light aside,
+.admin-shell.light header                                 { background:rgba(255,255,255,0.9) !important; border-color:#d0daea !important; }
+.admin-shell.light aside a                               { color:#5a6e88; }
+.admin-shell.light aside a:hover                         { background:rgba(59,130,246,0.07) !important; color:#17263b !important; }
+
+/* Backdrop backgrounds */
+.admin-shell.light .bg-slate-950\/40,
+.admin-shell.light .bg-slate-950                          { background-color:rgba(240,245,252,0.95) !important; }
+.admin-shell.light .bg-slate-900\/40,
+.admin-shell.light .bg-slate-900\/30,
+.admin-shell.light .bg-slate-900                          { background-color:rgba(244,248,255,0.9) !important; }
+.admin-shell.light .bg-slate-800\/40,
+.admin-shell.light .bg-slate-800\/50,
+.admin-shell.light .bg-slate-800\/60,
+.admin-shell.light .bg-slate-800                          { background-color:rgba(255,255,255,0.88) !important; }
+.admin-shell.light .bg-gray-950,
+.admin-shell.light .bg-gray-900                           { background-color:#f0f5fb !important; }
+.admin-shell.light .bg-gray-800                           { background-color:#fff !important; }
+
+/* Metric card gradients */
+.admin-shell.light [class*="from-slate-800"]              { --tw-gradient-from:#ffffff !important; }
+.admin-shell.light [class*="to-slate-900"]                { --tw-gradient-to:#f0f5fb !important; }
+.admin-shell.light [class*="from-yellow-900"]             { --tw-gradient-from:#fffbeb !important; }
+.admin-shell.light [class*="from-emerald-900"]            { --tw-gradient-from:#ecfdf5 !important; }
+.admin-shell.light [class*="from-blue-900"]               { --tw-gradient-from:#eff6ff !important; }
+
+/* Icon wrappers */
+.admin-shell.light .bg-slate-700\/50                      { background-color:rgba(148,163,184,0.2) !important; color:#455a72 !important; }
+
+/* Borders */
+.admin-shell.light .border-slate-800\/50,
+.admin-shell.light .border-slate-800,
+.admin-shell.light .border-slate-700\/50,
+.admin-shell.light .border-slate-700\/30,
+.admin-shell.light .border-slate-700,
+.admin-shell.light .border-gray-700                       { border-color:#cfdaea !important; }
+
+/* Activity rows */
+.admin-shell.light .bg-slate-900\/40                      { background-color:rgba(240,246,255,0.85) !important; }
+
+/* Chart */
+.admin-shell.light .recharts-cartesian-grid line          { stroke:#e2eaf4 !important; }
+.admin-shell.light .recharts-text                         { fill:#5a6e88 !important; }
+
+/* Inputs */
+.admin-shell.light input,
+.admin-shell.light select                                 { background:#fff !important; color:#1a2b40 !important; border-color:#cfdae6 !important; }
+
+/* Scrollbar */
+.admin-shell.light ::-webkit-scrollbar-track              { background:#eef2f8; }
+.admin-shell.light ::-webkit-scrollbar-thumb              { background:#c0cdd9; border-radius:3px; }
 
 @layer base {
   * {

@@ -18,6 +18,7 @@ class User extends Authenticatable
         'email',
         'password',
         'state_id',
+        'lga_id',
         'device_id',
         'phone',
         'status',
@@ -43,6 +44,11 @@ class User extends Authenticatable
         return $this->belongsTo(State::class);
     }
 
+    public function lga()
+    {
+        return $this->belongsTo(\App\Modules\ReferenceData\Models\Lga::class);
+    }
+
     public function incidents()
     {
         return $this->hasMany(\App\Modules\Incidents\Models\Incident::class, 'reporter_id');
@@ -51,6 +57,23 @@ class User extends Authenticatable
     public function assignments()
     {
         return $this->hasMany(\App\Modules\Assignments\Models\ObserverAssignment::class, 'observer_id');
+    }
+
+    /** LGAs this user is currently authorized to administer. */
+    public function adminLgaAssignments()
+    {
+        return $this->hasMany(\App\Modules\Assignments\Models\AdminLgaAssignment::class, 'user_id');
+    }
+
+    public function assignedLgas()
+    {
+        return $this->belongsToMany(
+            \App\Modules\ReferenceData\Models\Lga::class,
+            'admin_lga_assignments',
+            'user_id',
+            'lga_id'
+        )->withPivot(['tenant_id', 'assigned_by', 'is_active', 'assigned_at'])
+            ->wherePivot('is_active', true);
     }
 
     public function checkIns()

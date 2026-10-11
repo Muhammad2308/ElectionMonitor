@@ -52,7 +52,7 @@ export interface IncidentMedia {
 
 export interface QueuedAction {
   id: string; // UUID
-  type: 'CREATE_INCIDENT' | 'UPLOAD_MEDIA' | 'CHECK_IN' | 'LOCATION_UPDATE';
+  type: 'CREATE_INCIDENT' | 'UPLOAD_MEDIA' | 'CHECK_IN' | 'LOCATION_UPDATE' | 'POLLING_UNIT_SUBMISSION';
   payload: Record<string, unknown>;
   status: 'pending' | 'syncing' | 'synced' | 'failed' | 'conflict';
   priority: number;

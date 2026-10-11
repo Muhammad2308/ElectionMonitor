@@ -1,11 +1,16 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-interface User {
+export interface User {
     id: number;
     name: string;
     email: string;
     role?: string;
+    role_type?: string;
+    roles?: string[];
+    state_id?: number | null;
+    state_name?: string | null;
+    status?: string;
 }
 
 interface AuthState {
@@ -24,7 +29,8 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false,
             setAuth: (user, token) => {
                 localStorage.setItem('auth_token', token);
-                set({ user, token, isAuthenticated: true });
+                const role = user.role || user.role_type;
+                set({ user: { ...user, role }, token, isAuthenticated: true });
             },
             logout: () => {
                 localStorage.removeItem('auth_token');

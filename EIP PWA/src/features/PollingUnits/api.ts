@@ -21,6 +21,8 @@ export interface PollingUnitSubmission {
     name: string;
     latitude: number | null;
     longitude: number | null;
+    is_registered?: boolean;
+    image_url?: string | null;
   };
   ward?: { id: number; name: string; lga_name: string | null };
   submitter?: {
@@ -43,6 +45,19 @@ export interface GeoPollingUnit {
   name: string;
   latitude: number | null;
   longitude: number | null;
+  image_url: string | null;
+  is_registered: boolean;
+  registered_at: string | null;
+  registered_by?: { id: number; name: string } | null;
+  ward_name?: string;
+  lga_name?: string;
+  lga_id?: number;
+}
+
+export interface GeoLga {
+  id: number;
+  name: string;
+  state_id: number;
 }
 
 export interface GeoWard {
@@ -51,8 +66,35 @@ export interface GeoWard {
   lga_id: number;
 }
 
+export interface PollingUnitStats {
+  total: number;
+  registered: number;
+  unregistered: number;
+  registered_pct: number;
+  pending_submissions: number;
+}
+
+export interface PollingUnitQueryParams {
+  lga_id?: number;
+  ward_id?: number;
+  is_registered?: string;
+  search?: string;
+  page?: number;
+  per_page?: number;
+  all?: boolean;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta?: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}
+
 export const pollingUnitSubmissionsAPI = {
-  // The client defaults to JSON, which would serialise FormData as JSON and drop the files.
   submit: (form: FormData): Promise<{ data: PollingUnitSubmission }> =>
     api.post('/polling-units/submissions', form, { headers: { 'Content-Type': 'multipart/form-data' } }),
   photoBlob: (url: string): Promise<Blob> => api.get(url, { responseType: 'blob' }),
@@ -67,6 +109,14 @@ export const pollingUnitSubmissionsAPI = {
 };
 
 export const geographyAPI = {
-  pollingUnits: (): Promise<{ data: GeoPollingUnit[] }> => api.get('/geography/polling-units'),
-  wards: (): Promise<GeoWard[]> => api.get('/geography/wards'),
+  stats: (): Promise<PollingUnitStats> =>
+    api.get('/geography/polling-units/stats'),
+  lgas: (): Promise<GeoLga[]> =>
+    api.get('/geography/lgas'),
+  wards: (lgaId?: number): Promise<GeoWard[]> =>
+    api.get('/geography/wards', { params: lgaId ? { lga_id: lgaId } : undefined }),
+  pollingUnits: (params?: PollingUnitQueryParams): Promise<PaginatedResponse<GeoPollingUnit>> =>
+    api.get('/geography/polling-units', { params }),
+  register: (id: number, form: FormData): Promise<{ message: string; polling_unit: GeoPollingUnit }> =>
+    api.post(`/geography/polling-units/${id}/register`, form, { headers: { 'Content-Type': 'multipart/form-data' } }),
 };
