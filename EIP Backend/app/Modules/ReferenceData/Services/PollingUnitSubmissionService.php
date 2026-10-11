@@ -8,7 +8,7 @@ use App\Modules\ReferenceData\Models\PollingUnit;
 use App\Modules\ReferenceData\Models\PollingUnitSubmission;
 use App\Modules\ReferenceData\Models\PollingUnitSubmissionPhoto;
 use App\Modules\ReferenceData\Models\Ward;
-use App\Support\Geo;
+// App\Support\Geo inlined below to avoid autoload issues on production
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -34,12 +34,17 @@ class PollingUnitSubmissionService
     {
         $distance = null;
 
+        $tenantId = $observer->tenant_id
+            ?? ($observer->state_id ? DB::table('tenants')->where('state_id', $observer->state_id)->value('id') : null)
+            ?? DB::table('tenants')->value('id')
+            ?? 1;
+
         if ($data['submission_type'] === PollingUnitSubmission::TYPE_COORDINATES) {
             $pollingUnit = PollingUnit::with('ward.lga')->findOrFail($data['polling_unit_id']);
             $this->assertInState($observer, $pollingUnit->ward?->lga?->state_id, 'polling_unit_id');
 
             if ($pollingUnit->latitude !== null && $pollingUnit->longitude !== null) {
-                $distance = Geo::distanceMeters(
+                $distance = $this->haversineMeters(
                     (float) $data['latitude'],
                     (float) $data['longitude'],
                     (float) $pollingUnit->latitude,
@@ -48,7 +53,7 @@ class PollingUnitSubmissionService
             }
 
             $duplicate = PollingUnitSubmission::query()
-                ->where('tenant_id', $observer->tenant_id)
+                ->where('tenant_id', $tenantId)
                 ->where('submitted_by', $observer->id)
                 ->where('status', PollingUnitSubmission::STATUS_PENDING)
                 ->where('polling_unit_id', $pollingUnit->id)
@@ -62,7 +67,7 @@ class PollingUnitSubmissionService
             $this->assertInState($observer, $ward->lga?->state_id, 'ward_id');
 
             $duplicate = PollingUnitSubmission::query()
-                ->where('tenant_id', $observer->tenant_id)
+                ->where('tenant_id', $tenantId)
                 ->where('submitted_by', $observer->id)
                 ->where('status', PollingUnitSubmission::STATUS_PENDING)
                 ->where('ward_id', $ward->id)
@@ -78,10 +83,10 @@ class PollingUnitSubmissionService
         $storedPaths = [];
 
         try {
-            return DB::transaction(function () use ($observer, $data, $distance, $photos, &$storedPaths) {
+            return DB::transaction(function () use ($observer, $tenantId, $data, $distance, $photos, &$storedPaths) {
                 $submission = PollingUnitSubmission::create([
                     'uuid'                     => (string) Str::uuid(),
-                    'tenant_id'                => $observer->tenant_id,
+                    'tenant_id'                => $tenantId,
                     'submitted_by'             => $observer->id,
                     'submission_type'          => $data['submission_type'],
                     'polling_unit_id'          => $data['polling_unit_id'] ?? null,
@@ -96,10 +101,10 @@ class PollingUnitSubmissionService
                 ]);
 
                 foreach ($photos as $file) {
-                    $path = $this->storePhoto($observer->tenant_id, $submission->uuid, $file, $storedPaths);
+                    $path = $this->storePhoto($tenantId, $submission->uuid, $file, $storedPaths);
 
                     PollingUnitSubmissionPhoto::create([
-                        'tenant_id'     => $observer->tenant_id,
+                        'tenant_id'     => $tenantId,
                         'submission_id' => $submission->id,
                         'storage_path'  => $path,
                         'mime_type'     => $file->getMimeType(),
@@ -139,11 +144,21 @@ class PollingUnitSubmissionService
             $locked = PollingUnitSubmission::query()->lockForUpdate()->findOrFail($submission->id);
             $this->assertPending($locked);
 
+            $photo = $locked->photos()->first();
+            $photoPath = $photo?->storage_path;
+
             if ($locked->submission_type === PollingUnitSubmission::TYPE_COORDINATES) {
-                PollingUnit::whereKey($locked->polling_unit_id)->update([
-                    'latitude'  => $locked->latitude,
-                    'longitude' => $locked->longitude,
-                ]);
+                $puUpdates = [
+                    'latitude'      => $locked->latitude,
+                    'longitude'     => $locked->longitude,
+                    'is_registered' => true,
+                    'registered_at' => now(),
+                    'registered_by' => $reviewer->id,
+                ];
+                if ($photoPath) {
+                    $puUpdates['image_path'] = $photoPath;
+                }
+                PollingUnit::whereKey($locked->polling_unit_id)->update($puUpdates);
             } else {
                 if ($puCode === null) {
                     throw ValidationException::withMessages([
@@ -158,11 +173,15 @@ class PollingUnitSubmissionService
                 }
 
                 $created = PollingUnit::create([
-                    'ward_id'   => $locked->ward_id,
-                    'pu_code'   => $puCode,
-                    'name'      => $name ?? $locked->proposed_name,
-                    'latitude'  => $locked->latitude,
-                    'longitude' => $locked->longitude,
+                    'ward_id'       => $locked->ward_id,
+                    'pu_code'       => $puCode,
+                    'name'          => $name ?? $locked->proposed_name,
+                    'latitude'      => $locked->latitude,
+                    'longitude'     => $locked->longitude,
+                    'image_path'    => $photoPath,
+                    'is_registered' => true,
+                    'registered_at' => now(),
+                    'registered_by' => $reviewer->id,
                 ]);
 
                 $locked->polling_unit_id = $created->id;
@@ -228,10 +247,29 @@ class PollingUnitSubmissionService
 
     private function assertInState(User $observer, ?int $stateId, string $field): void
     {
-        if ($observer->state_id !== null && $stateId !== $observer->state_id) {
+        // Platform superadmins and reviewers can test/submit for any state
+        if ($observer->can('polling-units.review') || in_array($observer->role_type, ['cybernet_superadmin', 'national_master_admin']) || $observer->state_id === null) {
+            return;
+        }
+
+        if ($stateId !== null && $stateId !== $observer->state_id) {
             throw ValidationException::withMessages([
                 $field => ['This location is outside your assigned state.'],
             ]);
         }
+    }
+
+    /**
+     * Inlined Haversine formula — avoids needing App\Support\Geo on production.
+     */
+    private function haversineMeters(float $lat1, float $lon1, float $lat2, float $lon2): float
+    {
+        $earthRadius = 6371000;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a = sin($dLat / 2) ** 2
+            + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) ** 2;
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        return round($earthRadius * $c, 2);
     }
 }

@@ -100,10 +100,13 @@ class RolesAndPermissionsSeeder extends Seeder
             'incidents.update',
             'assignments.view',
             'assignments.manage',
+            'users.view',
+            'users.create',
             'observers.view',
             'gis.view',
             'notifications.view',
             'reports.view',
+            'polling-units.submit',
             'polling-units.review',
         ]);
 
@@ -132,6 +135,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'notifications.send',
             'support_access.grant',
             'audit.view',
+            'polling-units.submit',
             'polling-units.review',
         ]);
 
@@ -161,6 +165,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'notifications.send',
             'support_access.grant',
             'audit.view',
+            'polling-units.submit',
             'polling-units.review',
         ]);
 
@@ -171,8 +176,15 @@ class RolesAndPermissionsSeeder extends Seeder
             'platform.manage_tenants',
             'platform.manage_schedules',
             'platform.purge_data',
-            'audit.view', // Can view platform audit logs
-            // Cannot view tenant data (incidents, assignments) without a grant
+            'users.view',
+            'users.create',
+            'users.update',
+            'users.suspend',
+            'users.delete',
+            'users.assign-role',
+            'polling-units.submit',
+            'polling-units.review',
+            'audit.view',
         ]);
 
         // ── Seed default Cybernet Superadmin user ──────────────────────────

@@ -40,6 +40,8 @@ export interface AdminUser {
     phone: string | null;
     state_id: number | null;
     state_name: string | null;
+    lga_id?: number | null;
+    lga_name?: string | null;
     status: 'active' | 'inactive' | 'suspended';
     role: string | null;
     roles: string[];
@@ -58,12 +60,26 @@ export interface PaginatedResponse<T> {
 }
 
 export const usersAPI = {
-    list: (params: { page?: number; role?: string; status?: string; search?: string } = {}): Promise<PaginatedResponse<AdminUser>> =>
+    list: (params: { page?: number; role?: string; status?: string; search?: string; state_id?: number } = {}): Promise<PaginatedResponse<AdminUser>> =>
         api.get('/users', { params }),
-    create: (data: { name: string; email: string; phone?: string; password: string; state_id?: number; role: string }) =>
+    create: (data: { name: string; email: string; phone?: string; password: string; state_id?: number; lga_id?: number; role: string }) =>
         api.post('/users', data),
     suspend: (id: number) => api.post(`/users/${id}/suspend`),
     assignRole: (id: number, role: string) => api.post(`/users/${id}/assign-role`, { role }),
+    lgaAssignments: (id: number): Promise<{ data: LgaAssignment[] }> => api.get(`/users/${id}/lga-assignments`),
+    assignLga: (id: number, lga_id: number) => api.post(`/users/${id}/lga-assignments`, { lga_id }),
+    removeLga: (id: number, lga_id: number) => api.delete(`/users/${id}/lga-assignments/${lga_id}`),
+};
+
+export interface LgaAssignment {
+    id: number;
+    lga_id: number;
+    lga?: { id: number; name: string; state_id: number };
+    is_active: boolean;
+}
+
+export const observerAssignmentsAPI = {
+    create: (data: { user_id: number; polling_unit_id: number; election_date: string }) => api.post('/assignments', data),
 };
 
 export interface Role {

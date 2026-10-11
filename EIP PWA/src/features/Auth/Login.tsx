@@ -8,7 +8,7 @@ import { signInWithGoogle, isGoogleSignInConfigured } from '../../utils/googleAu
 import api from '../../api';
 
 interface LoginResponse {
-    user: { id: number; name: string; email: string; role?: string };
+    user: { id: number; name: string; email: string; role?: string; role_type?: string; roles?: string[] };
     token: string;
 }
 
@@ -71,8 +71,9 @@ export const Login: React.FC = () => {
     }, []);
 
     const completeLogin = (response: LoginResponse) => {
-        setAuth(response.user, response.token);
-        navigate(homeRouteForRole(response.user.role));
+        const primaryRole = response.user.role || response.user.role_type;
+        setAuth({ ...response.user, role: primaryRole }, response.token);
+        navigate(homeRouteForRole(primaryRole));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -262,7 +263,7 @@ export const Login: React.FC = () => {
                                 Welcome back
                             </h2>
                             <p style={{ fontSize:'13px', color:'#94a3b8' }}>
-                                Sign in to access your observer dashboard.
+                                Sign in to access your platform dashboard.
                             </p>
                         </div>
 
