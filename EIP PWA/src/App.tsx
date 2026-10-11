@@ -16,6 +16,7 @@ const IncidentsPage = lazy(() => import('./features/Admin/IncidentsPage'));
 const MapView = lazy(() => import('./features/Admin/MapView'));
 const PollingUnitReviewPage = lazy(() => import('./features/Admin/PollingUnitReviewPage'));
 const RegisterPollingUnit = lazy(() => import('./features/PollingUnits/RegisterPollingUnit'));
+const ElectionMonitoring = lazy(() => import('./features/Observer/ElectionMonitoring'));
 
 // Protected Route wrapper — any authenticated user
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -52,6 +53,7 @@ const App: React.FC = () => {
             <Route path="/report" element={<ProtectedRoute><IncidentForm /></ProtectedRoute>} />
             <Route path="/checkin" element={<ProtectedRoute><CheckIn /></ProtectedRoute>} />
             <Route path="/assignment" element={<ProtectedRoute><AssignmentDetails /></ProtectedRoute>} />
+            <Route path="/election-monitoring" element={<ProtectedRoute><ElectionMonitoring /></ProtectedRoute>} />
             <Route path="/register-polling-unit" element={<ProtectedRoute><RegisterPollingUnit /></ProtectedRoute>} />
 
             {/* Admin / situation-room console */}

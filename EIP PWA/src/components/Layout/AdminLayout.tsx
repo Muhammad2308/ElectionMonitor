@@ -4,6 +4,7 @@ import Header from './Header';
 import MobileTopBar from './MobileTopBar';
 import MobileBottomNav from './MobileBottomNav';
 import { useTheme } from '../../hooks/useTheme';
+import { AdminIncidentNotifier } from '../../features/Admin/AdminIncidentNotifier';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -49,6 +50,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       `}</style>
       <div className={`admin-shell ${theme === 'dark' ? 'dark' : 'light'} flex h-screen relative overflow-hidden`}>
         <BackgroundOrbs />
+        <AdminIncidentNotifier />
         
         {/* Sidebar — desktop only */}
         <Sidebar />

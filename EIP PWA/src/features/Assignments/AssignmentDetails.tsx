@@ -1,8 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MapPin, Building, Users } from 'lucide-react';
 import { useMyAssignment } from './useMyAssignment';
 
 export const AssignmentDetails: React.FC = () => {
+    const navigate = useNavigate();
     const { assignment, isLoading, isOfflineCopy } = useMyAssignment();
 
     if (isLoading) return <div className="min-h-screen bg-slate-900 p-4 flex items-center justify-center text-slate-400">Loading assignment…</div>;
@@ -54,6 +56,15 @@ export const AssignmentDetails: React.FC = () => {
                     {assignment.polling_unit.latitude?.toFixed(6) || 'Pending verification'}, {assignment.polling_unit.longitude?.toFixed(6) || 'Pending verification'}
                 </p>
             </div>
+
+            <button
+                type="button"
+                onClick={() => navigate('/election-monitoring')}
+                className="mt-4 w-full rounded-xl bg-blue-600 px-5 py-4 text-left font-semibold text-white transition hover:bg-blue-500"
+            >
+                <span className="block">Start presentation monitoring</span>
+                <span className="mt-1 block text-sm font-normal text-blue-100">Demo election · real reports and GPS are shared with your admin</span>
+            </button>
         </div>
     );
 };

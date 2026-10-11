@@ -86,7 +86,9 @@ export const MapView: React.FC = () => {
                   <div className="text-sm">
                     <strong>{obs.name}</strong><br />
                     {obs.polling_unit ?? 'Unassigned'}<br />
-                    {obs.is_online ? 'Online' : 'Last seen a while ago'}
+                    {obs.is_online ? 'Online · live GPS' : 'Last seen a while ago'}<br />
+                    {obs.last_seen_at ? `Location updated ${new Date(obs.last_seen_at).toLocaleString()}` : 'No location timestamp'}
+                    <br />{obs.latitude.toFixed(6)}, {obs.longitude.toFixed(6)}
                   </div>
                 </Popup>
               </CircleMarker>
