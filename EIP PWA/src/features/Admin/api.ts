@@ -114,8 +114,10 @@ export interface AdminIncident {
     description: string | null;
     involving_party?: string;
     incident_time: string;
+    created_at: string;
     polling_unit?: { id: number; name: string; ward?: string; lga?: string; state?: string };
     reporter?: { id: number; name: string };
+    media?: { id: string; media_type: 'image' | 'audio' | 'video'; mime_type: string; url: string; created_at: string }[];
 }
 
 export const incidentsAPI = {

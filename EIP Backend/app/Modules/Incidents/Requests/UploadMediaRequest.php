@@ -19,9 +19,9 @@ class UploadMediaRequest extends FormRequest
                 'required',
                 'file',
                 'max:20480', // 20 MB
-                'mimes:jpeg,jpg,png,webp,mp4,mov,mp3,aac,ogg',
+                'mimes:jpeg,jpg,png,webp,mp4,mov,webm,mp3,aac,ogg,m4a,wav',
             ],
-            'type'        => ['nullable', 'in:image,audio,video'],
+            'type'        => ['required', 'in:image,audio,video'],
         ];
     }
 }

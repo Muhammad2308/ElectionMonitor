@@ -3,6 +3,7 @@
 namespace App\Modules\GIS\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Authorization\GeographicScope;
 use App\Models\User;
 use App\Modules\Incidents\Models\Incident;
 use App\Modules\ReferenceData\Models\PollingUnit;
@@ -15,14 +16,21 @@ class GISController extends Controller
      */
     public function pollingUnits(Request $request)
     {
+        $user = $request->user();
+        abort_unless($user->can('gis.view'), 403, 'Missing gis.view permission.');
+        abort_unless(
+            in_array($user->role_type, ['state_admin', 'state_master_admin', 'national_master_admin'], true),
+            403,
+            'This role does not have a geographic monitoring scope.'
+        );
         $query = PollingUnit::with('ward.lga.state')
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->withCount(['incidents' => fn ($q) => $q->open()])
             ->withCount('checkIns');
 
-        if ($request->filled('state_id')) {
-            $query->whereHas('ward.lga', fn ($q) => $q->where('state_id', $request->integer('state_id')));
+        if ($user->role_type !== 'national_master_admin') {
+            app(GeographicScope::class)->applyToPollingUnits($query, $user);
         }
 
         $units = $query->get()->map(fn ($pu) => [
@@ -46,9 +54,24 @@ class GISController extends Controller
      */
     public function observers(Request $request)
     {
+        $admin = $request->user();
+        abort_unless($admin->can('gis.view'), 403, 'Missing gis.view permission.');
+        abort_unless(
+            in_array($admin->role_type, ['state_admin', 'state_master_admin', 'national_master_admin'], true),
+            403,
+            'This role does not have a geographic monitoring scope.'
+        );
+
         // Only observers check in / report GPS pings from the field under the
         // v3 role set — state_admin and above don't hold observers.check-in.
         $users = User::role('observer')
+            ->when($admin->role_type !== 'national_master_admin', fn ($query) => $query
+                ->where('tenant_id', $admin->tenant_id)
+                ->where('state_id', $admin->state_id))
+            ->when($admin->role_type === 'state_admin', function ($query) use ($admin) {
+                $lgaIds = app(GeographicScope::class)->assignedLgaIds($admin) ?? collect();
+                $query->whereHas('assignments.pollingUnit.ward', fn ($wards) => $wards->whereIn('lga_id', $lgaIds));
+            })
             ->with(['gpsLocations' => fn ($q) => $q->latest('captured_at')->limit(1)])
             ->with(['checkIns' => fn ($q) => $q->latest('captured_at')->limit(1)->with('pollingUnit')])
             ->get()
@@ -78,7 +101,19 @@ class GISController extends Controller
      */
     public function incidents(Request $request)
     {
-        $incidents = Incident::open()
+        $admin = $request->user();
+        abort_unless($admin->can('gis.view'), 403, 'Missing gis.view permission.');
+        abort_unless(
+            in_array($admin->role_type, ['state_admin', 'state_master_admin', 'national_master_admin'], true),
+            403,
+            'This role does not have a geographic monitoring scope.'
+        );
+        $incidentQuery = Incident::open();
+        if ($admin->role_type !== 'national_master_admin') {
+            app(GeographicScope::class)->applyToIncidents($incidentQuery, $admin);
+        }
+
+        $incidents = $incidentQuery
             ->with(['category', 'pollingUnit'])
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')

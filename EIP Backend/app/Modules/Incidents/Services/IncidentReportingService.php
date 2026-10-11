@@ -15,6 +15,7 @@ class IncidentReportingService
         return DB::transaction(function () use ($data, $user) {
             return Incident::create([
                 'id'              => $data['id'] ?? Str::uuid()->toString(),
+                'tenant_id'       => $user->tenant_id,
                 'reporter_id'     => $user->id,
                 'polling_unit_id' => $data['polling_unit_id'],
                 'category_id'     => $data['category_id'],
@@ -31,10 +32,11 @@ class IncidentReportingService
 
     public function storeMedia(Incident $incident, $file, string $type = 'image'): IncidentMedia
     {
-        $path = $file->store("incidents/{$incident->id}", 'public');
+        $path = $file->store("tenants/{$incident->tenant_id}/incidents/{$incident->id}", 'private');
 
         return IncidentMedia::create([
             'id'           => Str::uuid()->toString(),
+            'tenant_id'    => $incident->tenant_id,
             'incident_id'  => $incident->id,
             'storage_path' => $path,
             'mime_type'    => $file->getMimeType(),

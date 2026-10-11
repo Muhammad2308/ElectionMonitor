@@ -4,7 +4,6 @@ namespace App\Modules\Incidents\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 class IncidentMediaResource extends JsonResource
 {
@@ -17,7 +16,10 @@ class IncidentMediaResource extends JsonResource
             // from mime_type (e.g. "image/jpeg" -> "image").
             'media_type' => $this->mime_type ? strtok($this->mime_type, '/') : null,
             'mime_type'  => $this->mime_type,
-            'url'        => Storage::url($this->storage_path),
+            'url'        => route('incidents.media.show', [
+                'id' => $this->incident_id,
+                'mediaId' => $this->id,
+            ]),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

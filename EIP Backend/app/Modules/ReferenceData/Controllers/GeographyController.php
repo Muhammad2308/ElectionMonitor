@@ -7,6 +7,7 @@ use App\Modules\ReferenceData\Models\State;
 use App\Modules\ReferenceData\Models\Lga;
 use App\Modules\ReferenceData\Models\Ward;
 use App\Modules\ReferenceData\Models\PollingUnit;
+use App\Modules\Incidents\Models\IncidentCategory;
 use App\Modules\ReferenceData\Models\PollingUnitSubmission;
 use App\Modules\ReferenceData\Resources\PollingUnitResource;
 use App\Modules\Authorization\GeographicScope;
@@ -16,6 +17,11 @@ use Illuminate\Validation\ValidationException;
 
 class GeographyController extends Controller
 {
+    public function categories()
+    {
+        return response()->json(IncidentCategory::query()->orderBy('name')->get());
+    }
+
     public function states()
     {
         return response()->json(State::all());

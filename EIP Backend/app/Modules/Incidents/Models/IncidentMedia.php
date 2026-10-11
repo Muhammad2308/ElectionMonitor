@@ -15,6 +15,7 @@ class IncidentMedia extends Model
     // mime_type/size_bytes/sha256.
     protected $fillable = [
         'id',
+        'tenant_id',
         'incident_id',
         'storage_path',
         'mime_type',
