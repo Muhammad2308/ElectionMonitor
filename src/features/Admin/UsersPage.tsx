@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import AdminLayout from '../../components/Layout/AdminLayout';
 import { Badge, Button } from '../../components/UI';
-import { usersAPI, rolesAPI, type AdminUser } from './api';
+import { usersAPI, rolesAPI, observerAssignmentsAPI, type AdminUser } from './api';
 import api from '../../api';
+import { useAuthStore } from '../../store/useAuthStore';
 
 const statusVariant: Record<string, 'success' | 'default' | 'danger'> = {
   active: 'success',
@@ -16,6 +17,8 @@ export const UsersPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [showCreate, setShowCreate] = useState(false);
+  const [assignmentTarget, setAssignmentTarget] = useState<{ user: AdminUser; mode: 'lga' | 'polling-unit' } | null>(null);
+  const currentRole = useAuthStore((s) => s.user?.role);
 
   const users = useQuery({
     queryKey: ['admin', 'users', search, roleFilter],
@@ -30,6 +33,7 @@ export const UsersPage: React.FC = () => {
   });
 
   const list = users.data?.data ?? [];
+  const creatableRoles = (roles.data?.data ?? []).filter((r) => currentRole !== 'state_admin' || r.name === 'observer');
 
   return (
     <AdminLayout>
@@ -94,14 +98,28 @@ export const UsersPage: React.FC = () => {
                     <Badge variant={statusVariant[u.status] ?? 'default'}>{u.status}</Badge>
                   </td>
                   <td style={{ padding: '20px 24px' }}>
-                    <Button
-                      size="sm"
-                      variant={u.status === 'suspended' ? 'success' : 'danger'}
-                      isLoading={suspendMutation.isPending && suspendMutation.variables === u.id}
-                      onClick={() => suspendMutation.mutate(u.id)}
-                    >
-                      {u.status === 'suspended' ? 'Reactivate' : 'Suspend'}
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      {currentRole === 'state_master_admin' && u.role === 'state_admin' && (
+                        <Button size="sm" variant="secondary" onClick={() => setAssignmentTarget({ user: u, mode: 'lga' })}>
+                          Assign LGA
+                        </Button>
+                      )}
+                      {(currentRole === 'state_master_admin' || currentRole === 'state_admin') && u.role === 'observer' && (
+                        <Button size="sm" variant="secondary" onClick={() => setAssignmentTarget({ user: u, mode: 'polling-unit' })}>
+                          Assign polling unit
+                        </Button>
+                      )}
+                      {currentRole === 'state_master_admin' && (
+                        <Button
+                          size="sm"
+                          variant={u.status === 'suspended' ? 'success' : 'danger'}
+                          isLoading={suspendMutation.isPending && suspendMutation.variables === u.id}
+                          onClick={() => suspendMutation.mutate(u.id)}
+                        >
+                          {u.status === 'suspended' ? 'Reactivate' : 'Suspend'}
+                        </Button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -112,7 +130,7 @@ export const UsersPage: React.FC = () => {
 
       {showCreate && (
         <CreateUserModal
-          roles={roles.data?.data ?? []}
+          roles={creatableRoles}
           onClose={() => setShowCreate(false)}
           onCreated={() => {
             setShowCreate(false);
@@ -120,7 +138,168 @@ export const UsersPage: React.FC = () => {
           }}
         />
       )}
+      {assignmentTarget && (
+        <AssignmentModal
+          user={assignmentTarget.user}
+          mode={assignmentTarget.mode}
+          onClose={() => setAssignmentTarget(null)}
+          onSuccess={() => {
+            setAssignmentTarget(null);
+            queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+            queryClient.invalidateQueries({ queryKey: ['assignments'] });
+          }}
+        />
+      )}
     </AdminLayout>
+  );
+};
+
+type Choice = { id: number; name: string };
+
+const asArray = <T,>(value: unknown): T[] => {
+  if (Array.isArray(value)) return value as T[];
+  if (value && typeof value === 'object' && Array.isArray((value as { data?: unknown }).data)) {
+    return (value as { data: T[] }).data;
+  }
+  return [];
+};
+
+const modalError = (error: any): string => {
+  const errors = error?.response?.data?.errors;
+  const first = errors ? Object.values(errors)[0] as string[] | undefined : undefined;
+  return first?.[0] ?? error?.response?.data?.message ?? 'The assignment could not be saved.';
+};
+
+const AssignmentModal: React.FC<{
+  user: AdminUser;
+  mode: 'lga' | 'polling-unit';
+  onClose: () => void;
+  onSuccess: () => void;
+}> = ({ user, mode, onClose, onSuccess }) => {
+  const today = new Date();
+  const localToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const [selectedLgaId, setSelectedLgaId] = useState('');
+  const [selectedPuId, setSelectedPuId] = useState('');
+  const [electionDate, setElectionDate] = useState(localToday);
+  const [error, setError] = useState<string | null>(null);
+
+  const lgasQuery = useQuery({
+    queryKey: ['assignment-options', 'lgas'],
+    queryFn: async () => asArray<Choice>(await api.get('/geography/lgas')),
+  });
+  const lgas = lgasQuery.data ?? [];
+
+  useEffect(() => {
+    if (!selectedLgaId && lgas.length > 0) setSelectedLgaId(String(lgas[0].id));
+  }, [lgas, selectedLgaId]);
+
+  const assignedLgasQuery = useQuery({
+    queryKey: ['admin', 'users', user.id, 'lga-assignments'],
+    queryFn: () => usersAPI.lgaAssignments(user.id),
+    enabled: mode === 'lga',
+  });
+  const pollingUnitsQuery = useQuery({
+    queryKey: ['assignment-options', 'polling-units', selectedLgaId],
+    queryFn: async () => asArray<Choice>(await api.get('/geography/polling-units', {
+      params: { lga_id: Number(selectedLgaId), all: true },
+    })),
+    enabled: mode === 'polling-unit' && Boolean(selectedLgaId),
+  });
+
+  const lgaMutation = useMutation({
+    mutationFn: (lgaId: number) => usersAPI.assignLga(user.id, lgaId),
+    onSuccess: () => {
+      setError(null);
+      void assignedLgasQuery.refetch();
+    },
+    onError: (err) => setError(modalError(err)),
+  });
+  const removeLgaMutation = useMutation({
+    mutationFn: (lgaId: number) => usersAPI.removeLga(user.id, lgaId),
+    onSuccess: () => {
+      setError(null);
+      void assignedLgasQuery.refetch();
+    },
+    onError: (err) => setError(modalError(err)),
+  });
+  const pollingUnitMutation = useMutation({
+    mutationFn: () => observerAssignmentsAPI.create({
+      user_id: user.id,
+      polling_unit_id: Number(selectedPuId),
+      election_date: electionDate,
+    }),
+    onSuccess,
+    onError: (err) => setError(modalError(err)),
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" role="presentation">
+      <div className="w-full max-w-lg rounded-3xl border border-slate-700/50 bg-slate-900 shadow-2xl p-6 sm:p-8" role="dialog" aria-modal="true">
+        <h3 className="text-2xl font-black text-white">{mode === 'lga' ? 'Assign political LGA' : 'Assign polling unit'}</h3>
+        <p className="mt-2 mb-6 text-sm text-slate-400">For {user.name} · {user.state_name ?? 'Assigned state'}</p>
+        {error && <div className="mb-4 rounded-xl border border-red-700/40 bg-red-950/50 p-3 text-sm text-red-300">{error}</div>}
+
+        {mode === 'lga' ? (
+          <div className="space-y-5">
+            <label className="block text-sm font-semibold text-slate-300">
+              Political LGA
+              <select value={selectedLgaId} onChange={(e) => setSelectedLgaId(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white">
+                <option value="">Select an LGA</option>
+                {lgas.map((lga) => <option key={lga.id} value={lga.id}>{lga.name}</option>)}
+              </select>
+            </label>
+            <Button
+              disabled={!selectedLgaId || lgaMutation.isPending}
+              isLoading={lgaMutation.isPending}
+              onClick={() => { setError(null); lgaMutation.mutate(Number(selectedLgaId)); }}
+            >Add LGA access</Button>
+            <div>
+              <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">Assigned LGAs</h4>
+              {assignedLgasQuery.isLoading ? <p className="text-sm text-slate-400">Loading assignments…</p> : (
+                <div className="space-y-2">
+                  {(assignedLgasQuery.data?.data ?? []).map((assignment) => (
+                    <div key={assignment.id} className="flex items-center justify-between rounded-xl bg-slate-800/70 px-3 py-2">
+                      <span className="text-sm text-white">{assignment.lga?.name ?? `LGA ${assignment.lga_id}`}</span>
+                      <Button size="sm" variant="danger" isLoading={removeLgaMutation.isPending && removeLgaMutation.variables === assignment.lga_id} onClick={() => removeLgaMutation.mutate(assignment.lga_id)}>Remove</Button>
+                    </div>
+                  ))}
+                  {!assignedLgasQuery.data?.data.length && <p className="text-sm text-slate-500">No LGAs assigned yet.</p>}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setError(null); pollingUnitMutation.mutate(); }}>
+            <label className="block text-sm font-semibold text-slate-300">
+              Political LGA
+              <select value={selectedLgaId} onChange={(e) => { setSelectedLgaId(e.target.value); setSelectedPuId(''); }} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white">
+                {lgas.map((lga) => <option key={lga.id} value={lga.id}>{lga.name}</option>)}
+              </select>
+            </label>
+            <label className="block text-sm font-semibold text-slate-300">
+              Polling unit
+              <select required value={selectedPuId} onChange={(e) => setSelectedPuId(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white">
+                <option value="">{pollingUnitsQuery.isLoading ? 'Loading polling units…' : 'Select a polling unit'}</option>
+                {(pollingUnitsQuery.data ?? []).map((pu) => <option key={pu.id} value={pu.id}>{pu.name}</option>)}
+              </select>
+            </label>
+            <label className="block text-sm font-semibold text-slate-300">
+              Election date
+              <input required type="date" value={electionDate} onChange={(e) => setElectionDate(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white" />
+            </label>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+              <Button type="submit" isLoading={pollingUnitMutation.isPending} disabled={!selectedPuId}>Assign observer</Button>
+            </div>
+          </form>
+        )}
+
+        {mode === 'lga' && <div className="mt-6 flex justify-end"><Button type="button" variant="secondary" onClick={onClose}>Done</Button></div>}
+        {(lgasQuery.isError || pollingUnitsQuery.isError || assignedLgasQuery.isError) && !error && (
+          <p className="mt-4 text-sm text-amber-300">Could not load assignment options. Refresh and try again.</p>
+        )}
+      </div>
+    </div>
   );
 };
 
@@ -169,7 +348,6 @@ const CreateUserModal: React.FC<{
           <input required type="password" placeholder="Temporary password" value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             className="w-full bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all" style={{ padding: '14px 16px', fontSize: '15px' }} />
-          
           <select
             value={form.state_id ?? ''}
             onChange={(e) => setForm({ ...form, state_id: e.target.value ? Number(e.target.value) : undefined })}

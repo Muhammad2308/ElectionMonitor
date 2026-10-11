@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useLiveQuery } from 'dexie-react-hooks';
+import axios from 'axios';
 import {
   ArrowLeft,
   Camera,
@@ -12,16 +14,17 @@ import {
   XCircle,
   X,
   Layers,
-  Sparkles,
   Info,
   RotateCw,
-  Zap,
 } from 'lucide-react';
 import { CircleMarker, MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { Alert, Badge, Button } from '../../components/UI';
 import { formatDateTime } from '../../utils/formatting';
+import { db, type QueuedAction } from '../../storage/db';
+import { syncManager } from '../../api/SyncManager';
+import { useSyncStore } from '../../store/useSyncStore';
 import {
   geographyAPI,
   pollingUnitSubmissionsAPI,
@@ -33,15 +36,6 @@ const MAX_PHOTOS = 3;
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
 const DEFAULT_NIGERIA_CENTER: [number, number] = [9.082, 8.6753];
-
-const CITY_PRESETS = [
-  { name: 'Katsina', lat: 12.9908, lng: 7.6018 },
-  { name: 'Kano', lat: 12.0022, lng: 8.5920 },
-  { name: 'Bauchi', lat: 10.3158, lng: 9.8442 },
-  { name: 'Abuja (FCT)', lat: 9.0765, lng: 7.3986 },
-  { name: 'Kaduna', lat: 10.5105, lng: 7.4165 },
-  { name: 'Lagos', lat: 6.5244, lng: 3.3792 },
-];
 
 interface PendingPhoto {
   file: File;
@@ -63,74 +57,6 @@ const extractError = (err: any): string => {
     if (first?.[0]) return first[0];
   }
   return data?.message ?? 'Submission failed. Check your connection and try again.';
-};
-
-// Generate a high quality demo canvas photo for presentations
-const createDemoPhoto = (title: string): Promise<File> => {
-  return new Promise((resolve) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 800;
-    canvas.height = 600;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      const blob = new Blob(['demo'], { type: 'image/jpeg' });
-      return resolve(new File([blob], 'demo_pu_photo.jpg', { type: 'image/jpeg' }));
-    }
-
-    // Background gradient
-    const grad = ctx.createLinearGradient(0, 0, 800, 600);
-    grad.addColorStop(0, '#0f172a');
-    grad.addColorStop(1, '#1e293b');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 800, 600);
-
-    // Green Header Bar
-    ctx.fillStyle = '#059669';
-    ctx.fillRect(0, 0, 800, 90);
-
-    // Header Text
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 28px sans-serif';
-    ctx.fillText('INEC / ELECTWATCH FIELD VERIFICATION', 40, 55);
-
-    // Badge
-    ctx.fillStyle = '#3b82f6';
-    ctx.beginPath();
-    ctx.roundRect(40, 130, 240, 44, 8);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 18px sans-serif';
-    ctx.fillText('OFFICIAL POLLING UNIT', 55, 158);
-
-    // PU Title
-    ctx.fillStyle = '#f8fafc';
-    ctx.font = 'bold 24px sans-serif';
-    ctx.fillText(title || 'POLLING UNIT EVIDENCE PHOTO', 40, 220);
-
-    // Location & Timestamp Info
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '16px monospace';
-    ctx.fillText(`CAPTURED: ${new Date().toLocaleString()}`, 40, 270);
-    ctx.fillText(`STATUS: VERIFIED FIELD EVIDENCE`, 40, 300);
-    ctx.fillText(`SYSTEM: ELECTWATCH INTELLIGENCE PLATFORM`, 40, 330);
-
-    // Stamp circle
-    ctx.strokeStyle = '#10b981';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.arc(680, 480, 70, 0, 2 * Math.PI);
-    ctx.stroke();
-    ctx.fillStyle = '#10b981';
-    ctx.font = 'bold 16px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('GPS VERIFIED', 680, 475);
-    ctx.fillText('EVIDENCE', 680, 498);
-
-    canvas.toBlob((blob) => {
-      const file = new File([blob!], `pu_evidence_${Date.now()}.jpg`, { type: 'image/jpeg' });
-      resolve(file);
-    }, 'image/jpeg', 0.95);
-  });
 };
 
 // Map click listener component
@@ -167,17 +93,22 @@ export const RegisterPollingUnit: React.FC = () => {
   const [wardId, setWardId] = useState<number | null>(null);
   const [proposedName, setProposedName] = useState('');
 
-  // Coordinates state (Defaults to Katsina city center for immediate presentation readiness)
-  const [latInput, setLatInput] = useState<string>('12.990800');
-  const [lngInput, setLngInput] = useState<string>('7.601800');
-  const [accuracyM, setAccuracyM] = useState<number>(5);
+  const [latInput, setLatInput] = useState<string>('');
+  const [lngInput, setLngInput] = useState<string>('');
+  const [accuracyM, setAccuracyM] = useState<number>(10);
   const [capturedAt, setCapturedAt] = useState<string>(new Date().toISOString());
-  const [coordsSource, setCoordsSource] = useState<'gps' | 'manual' | 'map' | 'preset'>('preset');
+  const [coordsSource, setCoordsSource] = useState<'gps' | 'manual' | 'map' | 'unset'>('unset');
 
   const [lastSubmitted, setLastSubmitted] = useState<PollingUnitSubmission | null>(null);
+  const [queuedMessage, setQueuedMessage] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [photos, setPhotos] = useState<PendingPhoto[]>([]);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const isOnline = useSyncStore((s) => s.isOnline);
+  const queuedSubmissions = useLiveQuery(
+    () => db.queued_actions.filter((action) => action.type === 'POLLING_UNIT_SUBMISSION').toArray(),
+    [],
+  ) ?? [];
 
   useEffect(() => {
     const stop = startTracking();
@@ -220,14 +151,6 @@ export const RegisterPollingUnit: React.FC = () => {
     setPhotos((current) => [...current, ...accepted.slice(0, Math.max(room, 0))]);
   };
 
-  const addDemoPhoto = async () => {
-    const title = selectedPu ? `${selectedPu.name} (${selectedPu.pu_code})` : proposedName || 'Polling Unit Evidence';
-    const file = await createDemoPhoto(title);
-    setPhotoError(null);
-    const previewUrl = URL.createObjectURL(file);
-    setPhotos((current) => [...current.slice(0, MAX_PHOTOS - 1), { file, previewUrl }]);
-  };
-
   const removePhoto = (index: number) => {
     setPhotos((current) => {
       URL.revokeObjectURL(current[index].previewUrl);
@@ -267,15 +190,9 @@ export const RegisterPollingUnit: React.FC = () => {
     [pollingUnits.data, selectedPuId]
   );
 
-  // If first PU is loaded and none selected, auto-select first to ease demonstration
-  useEffect(() => {
-    if (!selectedPuId && matches.length > 0 && mode === 'existing') {
-      setSelectedPuId(matches[0].id);
-    }
-  }, [matches, selectedPuId, mode]);
-
   // Set location from GPS
   const handleCaptureLiveGPS = () => {
+    setFormError(null);
     if (position) {
       setLatInput(position.latitude.toFixed(6));
       setLngInput(position.longitude.toFixed(6));
@@ -292,14 +209,12 @@ export const RegisterPollingUnit: React.FC = () => {
           setCoordsSource('gps');
         },
         (err) => {
-          setFormError(`GPS notice: ${err.message}. Setting demo preset coordinates for presentation.`);
-          setLatInput('12.990800');
-          setLngInput('7.601800');
-          setAccuracyM(5);
-          setCoordsSource('preset');
+          setFormError(`Could not capture GPS: ${err.message}. You can set the pin on the map or enter coordinates manually.`);
         },
         { enableHighAccuracy: true, timeout: 5000 }
       );
+    } else {
+      setFormError('This device does not support GPS. Choose a point on the map or enter coordinates manually.');
     }
   };
 
@@ -309,25 +224,6 @@ export const RegisterPollingUnit: React.FC = () => {
     setAccuracyM(5);
     setCapturedAt(new Date().toISOString());
     setCoordsSource('map');
-  };
-
-  const applyPreset = (lat: number, lng: number) => {
-    setLatInput(lat.toFixed(6));
-    setLngInput(lng.toFixed(6));
-    setAccuracyM(5);
-    setCapturedAt(new Date().toISOString());
-    setCoordsSource('preset');
-  };
-
-  // Quick 1-Click Complete Demo Setup for Correspondents
-  const handleOneClickDemo = async () => {
-    if (matches.length > 0 && !selectedPuId) {
-      setSelectedPuId(matches[0].id);
-    }
-    applyPreset(12.9908, 7.6018); // Katsina center
-    if (photos.length === 0) {
-      await addDemoPhoto();
-    }
     setFormError(null);
   };
 
@@ -346,23 +242,61 @@ export const RegisterPollingUnit: React.FC = () => {
     : DEFAULT_NIGERIA_CENTER;
 
   const canSubmit =
-    hasValidCoords &&
+    hasValidCoords && coordsSource !== 'unset' &&
+    (coordsSource !== 'gps' || accuracyM <= 100) &&
     photos.length > 0 &&
     (mode === 'existing' ? selectedPuId !== null : wardId !== null && proposedName.trim().length > 0);
 
+  useEffect(() => {
+    const onSynced = (event: Event) => {
+      if ((event as CustomEvent<{ type?: string }>).detail?.type === 'POLLING_UNIT_SUBMISSION') {
+        queryClient.invalidateQueries({ queryKey: ['polling-units', 'mine'] });
+      }
+    };
+    window.addEventListener('sync:action-complete', onSynced);
+    return () => window.removeEventListener('sync:action-complete', onSynced);
+  }, [queryClient]);
+
+  const resetForm = () => {
+    setLatInput('');
+    setLngInput('');
+    setAccuracyM(10);
+    setCapturedAt(new Date().toISOString());
+    setCoordsSource('unset');
+    setSelectedPuId(null);
+    setProposedName('');
+    setWardId(null);
+    setSearch('');
+    clearPhotos();
+  };
+
   const submit = useMutation({
-    mutationFn: (form: FormData) => pollingUnitSubmissionsAPI.submit(form),
+    mutationFn: async (submission: { payload: Record<string, unknown>; form: FormData }) => {
+      if (!navigator.onLine || !isOnline) {
+        await syncManager.queueAction('POLLING_UNIT_SUBMISSION', submission.payload, 10);
+        return { queued: true as const };
+      }
+      try {
+        const response = await pollingUnitSubmissionsAPI.submit(submission.form);
+        return { queued: false as const, data: response.data };
+      } catch (error) {
+        if (axios.isAxiosError(error) && !error.response) {
+          await syncManager.queueAction('POLLING_UNIT_SUBMISSION', submission.payload, 10);
+          return { queued: true as const };
+        }
+        throw error;
+      }
+    },
     onSuccess: (res) => {
-      setLastSubmitted(res.data);
+      if (res.queued) {
+        setQueuedMessage('Saved on this device. It will sync when your connection is available.');
+        setLastSubmitted(null);
+      } else {
+        setLastSubmitted(res.data);
+        setQueuedMessage(null);
+      }
       setFormError(null);
-      setLatInput('12.990800');
-      setLngInput('7.601800');
-      setCoordsSource('preset');
-      setSelectedPuId(null);
-      setProposedName('');
-      setWardId(null);
-      setSearch('');
-      clearPhotos();
+      resetForm();
       queryClient.invalidateQueries({ queryKey: ['polling-units', 'mine'] });
     },
     onError: (err) => setFormError(extractError(err)),
@@ -372,23 +306,30 @@ export const RegisterPollingUnit: React.FC = () => {
     if (!hasValidCoords || !canSubmit) return;
     setFormError(null);
 
-    const form = new FormData();
-    form.append('latitude', String(parsedLat));
-    form.append('longitude', String(parsedLng));
-    form.append('accuracy_m', String(accuracyM));
-    form.append('captured_at', capturedAt || new Date().toISOString());
+    const payload: Record<string, unknown> = {
+      latitude: String(parsedLat),
+      longitude: String(parsedLng),
+      accuracy_m: String(accuracyM),
+      captured_at: capturedAt || new Date().toISOString(),
+      photos: photos.map(({ file }) => file),
+    };
 
     if (mode === 'existing') {
-      form.append('submission_type', 'coordinates');
-      form.append('polling_unit_id', String(selectedPuId));
+      payload.submission_type = 'coordinates';
+      payload.polling_unit_id = String(selectedPuId);
     } else {
-      form.append('submission_type', 'new_polling_unit');
-      form.append('ward_id', String(wardId));
-      form.append('proposed_name', proposedName.trim());
+      payload.submission_type = 'new_polling_unit';
+      payload.ward_id = String(wardId);
+      payload.proposed_name = proposedName.trim();
     }
-    photos.forEach((p) => form.append('photos[]', p.file, p.file.name));
 
-    submit.mutate(form);
+    const form = new FormData();
+    Object.entries(payload).forEach(([key, value]) => {
+      if (key === 'photos' && Array.isArray(value)) {
+        value.forEach((photo) => form.append('photos[]', photo as Blob, (photo as File).name));
+      } else form.append(key, String(value));
+    });
+    submit.mutate({ payload, form });
   };
 
   const toggleClass = (active: boolean) =>
@@ -427,37 +368,16 @@ export const RegisterPollingUnit: React.FC = () => {
             >
               <RotateCw size={15} />
             </button>
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-400">
-              <Sparkles size={13} />
-              Presentation Ready
-            </div>
+              <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold ${isOnline ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-amber-500/10 border-amber-500/20 text-amber-300'}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-amber-300'}`} />
+              {isOnline ? 'Online' : 'Offline'}
+              </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 pt-6 flex flex-col gap-6">
-        {/* Quick Demo Action Card */}
-        <div className="rounded-2xl border border-blue-500/30 bg-gradient-to-r from-blue-950/40 via-indigo-950/30 to-slate-900 p-4.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg shadow-blue-950/20">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-blue-600/20 text-blue-400 shrink-0">
-              <Zap size={22} className="animate-pulse" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-white">Live Presentation / Demo Mode</h3>
-              <p className="text-xs text-slate-300">
-                You can capture or set any coordinate regardless of physical distance for testing & presentations.
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="primary"
-            onClick={handleOneClickDemo}
-            className="shrink-0 text-xs py-2.5 px-4 font-bold bg-blue-600 hover:bg-blue-500 shadow-md flex items-center gap-1.5"
-          >
-            <Zap size={14} /> 1-Click Demo Fill
-          </Button>
-        </div>
-
+        {queuedMessage && <Alert variant="success" title="Submission saved offline">{queuedMessage}</Alert>}
         {lastSubmitted && (
           <Alert variant="success" title="Submitted for Admin Review!">
             <div className="flex flex-col gap-1 text-xs">
@@ -519,7 +439,7 @@ export const RegisterPollingUnit: React.FC = () => {
                           if (hasCoords) {
                             setLatInput(String(pu.latitude));
                             setLngInput(String(pu.longitude));
-                            setCoordsSource('map');
+                            setCoordsSource('unset');
                           }
                         }}
                         className={`w-full text-left rounded-xl border p-3 transition-all ${
@@ -532,7 +452,7 @@ export const RegisterPollingUnit: React.FC = () => {
                           <div>
                             <div className="text-sm font-semibold text-white">{pu.name}</div>
                             <div className="text-xs text-slate-400 font-mono mt-0.5">
-                              {pu.pu_code} {pu.ward_name && `· Ward: ${pu.ward_name}`}
+                      {pu.pu_code} {pu.ward_name && `· Ward: ${pu.ward_name}`} {pu.lga_name && `· LGA: ${pu.lga_name}`}
                             </div>
                           </div>
                           {hasCoords ? (
@@ -613,29 +533,6 @@ export const RegisterPollingUnit: React.FC = () => {
             <span className="text-[11px] text-slate-500">Step 2 of 3</span>
           </div>
 
-          {/* Quick Presets for Presentations */}
-          <div className="flex flex-col gap-2">
-            <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider flex items-center gap-1.5">
-              <Sparkles size={13} className="text-amber-400" /> Quick State/City Presets (Testing & Presentation)
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {CITY_PRESETS.map((city) => (
-                <button
-                  key={city.name}
-                  type="button"
-                  onClick={() => applyPreset(city.lat, city.lng)}
-                  className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-all ${
-                    Math.abs(parsedLat - city.lat) < 0.01 && Math.abs(parsedLng - city.lng) < 0.01
-                      ? 'bg-blue-600/20 border-blue-500 text-blue-300 font-bold'
-                      : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                  }`}
-                >
-                  📍 {city.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Quick GPS Capture Button */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
             <div className="flex items-center gap-3">
@@ -653,11 +550,12 @@ export const RegisterPollingUnit: React.FC = () => {
                     Source: {coordsSource}
                   </span>
                 </div>
-                <div className="text-[11px] text-slate-400">
+              <div className="text-[11px] text-slate-400">
                   {position
                     ? `Lat: ${position.latitude.toFixed(5)}, Lng: ${position.longitude.toFixed(5)}`
-                    : 'Click capture to lock coordinates or choose a preset'}
-                </div>
+                    : 'Capture live GPS, choose a point on the map, or enter coordinates manually'}
+              </div>
+              {coordsSource === 'gps' && accuracyM > 100 && <div className="text-[11px] text-amber-300">GPS accuracy must be 100 m or better. Move to an open area and recapture.</div>}
               </div>
             </div>
 
@@ -685,6 +583,7 @@ export const RegisterPollingUnit: React.FC = () => {
                 onChange={(e) => {
                   setLatInput(e.target.value);
                   setCoordsSource('manual');
+                  setCapturedAt(new Date().toISOString());
                 }}
                 placeholder="e.g. 12.990800"
                 className="w-full rounded-xl border border-slate-700/60 bg-slate-950/70 py-3 px-3.5 text-sm text-white font-mono placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
@@ -702,6 +601,7 @@ export const RegisterPollingUnit: React.FC = () => {
                 onChange={(e) => {
                   setLngInput(e.target.value);
                   setCoordsSource('manual');
+                  setCapturedAt(new Date().toISOString());
                 }}
                 placeholder="e.g. 7.601800"
                 className="w-full rounded-xl border border-slate-700/60 bg-slate-950/70 py-3 px-3.5 text-sm text-white font-mono placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
@@ -757,13 +657,6 @@ export const RegisterPollingUnit: React.FC = () => {
               Photo Evidence
             </h2>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={addDemoPhoto}
-                className="text-xs px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 font-medium transition-colors flex items-center gap-1"
-              >
-                <Zap size={12} /> Add Demo Photo
-              </button>
               <span className="text-[11px] text-slate-500">Step 3 of 3</span>
             </div>
           </div>
@@ -825,7 +718,7 @@ export const RegisterPollingUnit: React.FC = () => {
 
           {photos.length === 0 && (
             <p className="text-xs text-amber-300/80 flex items-center gap-1.5">
-              <Info size={14} /> At least 1 photo is required. (Click "Add Demo Photo" above if testing without a camera).
+              <Info size={14} /> At least 1 photo is required for administrator review.
             </p>
           )}
         </section>
@@ -865,6 +758,27 @@ export const RegisterPollingUnit: React.FC = () => {
           )}
 
           <ul className="flex flex-col gap-2.5">
+            {queuedSubmissions.map((action: QueuedAction) => (
+              <li key={action.id} className="rounded-xl border border-amber-800/40 bg-amber-950/20 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-semibold text-white">
+                      {String(action.payload.proposed_name || (action.payload.submission_type === 'coordinates' ? `Polling unit ${action.payload.polling_unit_id}` : 'New polling unit'))}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-400">Saved {formatDateTime(action.created_at)} · {Array.isArray(action.payload.photos) ? action.payload.photos.length : 0} evidence photo(s)</div>
+                    {action.last_error && <div className="mt-2 text-xs text-red-300">{action.last_error}</div>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={action.status === 'failed' || action.status === 'conflict' ? 'danger' : action.status === 'synced' ? 'success' : 'warning'}>
+                      {action.status === 'synced' ? 'Synced' : action.status === 'syncing' ? 'Syncing' : action.status === 'pending' ? 'Waiting to sync' : action.status}
+                    </Badge>
+                    {(action.status === 'failed' || action.status === 'conflict') && (
+                      <button type="button" onClick={() => void syncManager.retryAction(action.id)} className="text-xs text-blue-300 hover:text-white">Retry</button>
+                    )}
+                  </div>
+                </div>
+              </li>
+            ))}
             {(mine.data?.data ?? []).map((s) => (
               <li key={s.id} className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 hover:border-slate-700 transition-colors">
                 <div className="flex items-start justify-between gap-3">

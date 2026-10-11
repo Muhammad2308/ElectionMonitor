@@ -64,6 +64,20 @@ export const usersAPI = {
         api.post('/users', data),
     suspend: (id: number) => api.post(`/users/${id}/suspend`),
     assignRole: (id: number, role: string) => api.post(`/users/${id}/assign-role`, { role }),
+    lgaAssignments: (id: number): Promise<{ data: LgaAssignment[] }> => api.get(`/users/${id}/lga-assignments`),
+    assignLga: (id: number, lga_id: number) => api.post(`/users/${id}/lga-assignments`, { lga_id }),
+    removeLga: (id: number, lga_id: number) => api.delete(`/users/${id}/lga-assignments/${lga_id}`),
+};
+
+export interface LgaAssignment {
+    id: number;
+    lga_id: number;
+    lga?: { id: number; name: string; state_id: number };
+    is_active: boolean;
+}
+
+export const observerAssignmentsAPI = {
+    create: (data: { user_id: number; polling_unit_id: number; election_date: string }) => api.post('/assignments', data),
 };
 
 export interface Role {
