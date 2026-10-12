@@ -548,7 +548,7 @@
 
 .observer-actions-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 7px;
 }
 
@@ -589,6 +589,7 @@
 }
 
 .action-report .observer-quick-icon { background: #3a2b25; color: #f4a35f; }
+.action-election .observer-quick-icon { background: #3a3219; color: #f4d35f; }
 .action-checkin .observer-quick-icon { background: #143a3a; color: #4ed2b1; }
 .action-register .observer-quick-icon { background: #1a3458; color: #74aaff; }
 .action-inbox .observer-quick-icon { background: #342958; color: #c49cff; }
