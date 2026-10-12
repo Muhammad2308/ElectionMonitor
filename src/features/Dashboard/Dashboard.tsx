@@ -10,6 +10,7 @@ import {
   LocateFixed,
   MapPin,
   MessageSquare,
+  Radio,
   RefreshCw,
   ShieldCheck,
   Upload,
@@ -187,6 +188,13 @@ export const Dashboard: React.FC = () => {
                 <span>Essential tools for election day</span>
               </div>
               <div className="observer-actions-grid">
+            <QuickAction
+              icon={<Radio size={20} aria-hidden="true" />}
+              title="Sample Election"
+              hint="Open the presentation monitoring session"
+              onClick={() => navigate('/election-monitoring')}
+              tone="action-election"
+            />
             <QuickAction
               icon={<AlertTriangle size={20} aria-hidden="true" />}
               title="Report incident"

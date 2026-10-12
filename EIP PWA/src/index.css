@@ -1,0 +1,157 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import 'tailwindcss';
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+:root {
+  --primary: #0f172a;
+  --secondary: #1e293b;
+  --accent: #3b82f6;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+}
+
+:root[data-theme='light'] { color-scheme: light; }
+:root[data-theme='dark'] { color-scheme: dark; --primary:#060a14; --secondary:#142033; --text-main:#f8fafc; --text-muted:#94a3b8; }
+
+.theme-toggle { border:1px solid rgba(148,163,184,.35); background:rgba(255,255,255,.08); color:inherit; border-radius:9px; padding:8px 10px; display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:800; cursor:pointer; }
+.theme-toggle:hover { background:rgba(148,163,184,.2); }
+:root[data-theme='dark'] .field-shell,:root[data-theme='dark'] .report-shell { background:#07111f; color:#e7eef8; }
+:root[data-theme='dark'] .assignment-card,:root[data-theme='dark'] .action-card,:root[data-theme='dark'] .sync-card,:root[data-theme='dark'] .guide-card,:root[data-theme='dark'] .incident-form,:root[data-theme='dark'] .location-panel { background:#101d2e; border-color:#263c55; box-shadow:none; }
+:root[data-theme='dark'] .assignment-card { background:linear-gradient(135deg,#111f32,#0e2940); }
+:root[data-theme='dark'] .intro p:not(.eyebrow),:root[data-theme='dark'] .coordinate-state span,:root[data-theme='dark'] .form-head p,:root[data-theme='dark'] .report-intro>p:last-child,:root[data-theme='dark'] .muted { color:#a8b7ca; }
+:root[data-theme='dark'] .assignment-card h2,:root[data-theme='dark'] .form-head h2,:root[data-theme='dark'] .location-head h2 { color:#f2f7ff; }
+:root[data-theme='dark'] .category-grid button,:root[data-theme='dark'] .description-label textarea { background:#15243a; color:#dce8f7; border-color:#304662; }
+:root[data-theme='dark'] .evidence-note { background:#11263d; color:#b5c9df; }
+:root[data-theme='dark'] .refresh { background:#15243a; color:#dce8f7; border-color:#304662; }
+
+/* Situation Room pages use Tailwind utility colors. These scoped overrides let
+   existing pages switch themes without duplicating each route markup. */
+.admin-shell.dark  { background:#060a14; color:#f1f5f9; }
+.admin-shell.light { background:#eef2f8; color:#152238; }
+
+/* Text */
+.admin-shell.light .text-white                            { color:#17263b !important; }
+.admin-shell.light .text-slate-100,
+.admin-shell.light .text-slate-200                        { color:#273b55 !important; }
+.admin-shell.light .text-slate-300,
+.admin-shell.light .text-slate-400                        { color:#5a6e88 !important; }
+.admin-shell.light .text-slate-500                        { color:#74859a !important; }
+.admin-shell.light .text-indigo-400                       { color:#4f5dab !important; }
+.admin-shell.light .text-emerald-400                      { color:#059669 !important; }
+
+/* Sidebar & Header */
+.admin-shell.light aside,
+.admin-shell.light header                                 { background:rgba(255,255,255,0.9) !important; border-color:#d0daea !important; }
+.admin-shell.light aside a                               { color:#5a6e88; }
+.admin-shell.light aside a:hover                         { background:rgba(59,130,246,0.07) !important; color:#17263b !important; }
+
+/* Backdrop backgrounds */
+.admin-shell.light .bg-slate-950\/40,
+.admin-shell.light .bg-slate-950                          { background-color:rgba(240,245,252,0.95) !important; }
+.admin-shell.light .bg-slate-900\/40,
+.admin-shell.light .bg-slate-900\/30,
+.admin-shell.light .bg-slate-900                          { background-color:rgba(244,248,255,0.9) !important; }
+.admin-shell.light .bg-slate-800\/40,
+.admin-shell.light .bg-slate-800\/50,
+.admin-shell.light .bg-slate-800\/60,
+.admin-shell.light .bg-slate-800                          { background-color:rgba(255,255,255,0.88) !important; }
+.admin-shell.light .bg-gray-950,
+.admin-shell.light .bg-gray-900                           { background-color:#f0f5fb !important; }
+.admin-shell.light .bg-gray-800                           { background-color:#fff !important; }
+
+/* Metric card gradients */
+.admin-shell.light [class*="from-slate-800"]              { --tw-gradient-from:#ffffff !important; }
+.admin-shell.light [class*="to-slate-900"]                { --tw-gradient-to:#f0f5fb !important; }
+.admin-shell.light [class*="from-yellow-900"]             { --tw-gradient-from:#fffbeb !important; }
+.admin-shell.light [class*="from-emerald-900"]            { --tw-gradient-from:#ecfdf5 !important; }
+.admin-shell.light [class*="from-blue-900"]               { --tw-gradient-from:#eff6ff !important; }
+
+/* Icon wrappers */
+.admin-shell.light .bg-slate-700\/50                      { background-color:rgba(148,163,184,0.2) !important; color:#455a72 !important; }
+
+/* Borders */
+.admin-shell.light .border-slate-800\/50,
+.admin-shell.light .border-slate-800,
+.admin-shell.light .border-slate-700\/50,
+.admin-shell.light .border-slate-700\/30,
+.admin-shell.light .border-slate-700,
+.admin-shell.light .border-gray-700                       { border-color:#cfdaea !important; }
+
+/* Activity rows */
+.admin-shell.light .bg-slate-900\/40                      { background-color:rgba(240,246,255,0.85) !important; }
+
+/* Chart */
+.admin-shell.light .recharts-cartesian-grid line          { stroke:#e2eaf4 !important; }
+.admin-shell.light .recharts-text                         { fill:#5a6e88 !important; }
+
+/* Inputs */
+.admin-shell.light input,
+.admin-shell.light select                                 { background:#fff !important; color:#1a2b40 !important; border-color:#cfdae6 !important; }
+
+/* Scrollbar */
+.admin-shell.light ::-webkit-scrollbar-track              { background:#eef2f8; }
+.admin-shell.light ::-webkit-scrollbar-thumb              { background:#c0cdd9; border-radius:3px; }
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--primary);
+  color: var(--text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 1rem;
+}
+
+.btn-primary {
+  background-color: var(--accent);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.card {
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--secondary);
+  border-radius: 3px;
+}
