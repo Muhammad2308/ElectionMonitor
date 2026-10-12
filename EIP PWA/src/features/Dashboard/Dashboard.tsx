@@ -11,6 +11,7 @@ import {
   MapPin,
   MessageSquare,
   RefreshCw,
+  Radio,
   ShieldCheck,
   Upload,
   UserPlus,
@@ -94,6 +95,7 @@ export const Dashboard: React.FC = () => {
   const navItems = [
     { label: 'Overview', icon: Home, action: () => window.scrollTo({ top: 0, behavior: 'smooth' }), active: true },
     { label: 'My polling unit', icon: MapPin, action: () => navigate('/assignment') },
+    { label: 'Sample Election', icon: Radio, action: () => navigate('/election-monitoring') },
     { label: 'Field reports', icon: ClipboardList, action: () => navigate('/report') },
     { label: 'Inbox', icon: MessageSquare, action: scrollToInbox, badge: inbox.data?.unread_count },
     { label: 'Elections', icon: CalendarDays, action: scrollToElections },
@@ -187,6 +189,13 @@ export const Dashboard: React.FC = () => {
                 <span>Essential tools for election day</span>
               </div>
               <div className="observer-actions-grid">
+            <QuickAction
+              icon={<Radio size={20} aria-hidden="true" />}
+              title="Sample Election"
+              hint="Open the presentation monitoring session"
+              onClick={() => navigate('/election-monitoring')}
+              tone="action-election"
+            />
             <QuickAction
               icon={<AlertTriangle size={20} aria-hidden="true" />}
               title="Report incident"
