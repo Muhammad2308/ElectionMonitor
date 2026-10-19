@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import AdminLayout from '../../components/Layout/AdminLayout';
 import { Badge, Button } from '../../components/UI';
@@ -217,6 +217,119 @@ const modalError = (error: any): string => {
   return first?.[0] ?? error?.response?.data?.message ?? 'The assignment could not be saved.';
 };
 
+const pollingUnitLabel = (unit: GeoPollingUnit) =>
+  `${unit.name}${unit.pu_code ? ` (${unit.pu_code})` : ''}`;
+
+const SearchablePollingUnitSelect: React.FC<{
+  inputId: string;
+  options: GeoPollingUnit[];
+  value: string;
+  onChange: (value: string) => void;
+  disabled: boolean;
+}> = ({ inputId, options, value, onChange, disabled }) => {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [activeIndex, setActiveIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listId = `${inputId}-options`;
+  const selected = options.find((unit) => String(unit.id) === value);
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const matches = options.filter((unit) =>
+    pollingUnitLabel(unit).toLocaleLowerCase().includes(normalizedQuery),
+  );
+  const visibleOptions = matches.slice(0, 50);
+
+  const selectOption = (unit: GeoPollingUnit) => {
+    onChange(String(unit.id));
+    setQuery('');
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative mt-2">
+      <input
+        id={inputId}
+        ref={inputRef}
+        type="text"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={open}
+        aria-controls={listId}
+        aria-activedescendant={open && visibleOptions[activeIndex] ? `${listId}-${visibleOptions[activeIndex].id}` : undefined}
+        autoComplete="off"
+        required
+        value={open ? query : selected ? pollingUnitLabel(selected) : ''}
+        placeholder={disabled ? 'Select an LGA first' : 'Search by polling unit name or code…'}
+        disabled={disabled}
+        onFocus={() => {
+          setQuery(selected ? pollingUnitLabel(selected) : '');
+          setActiveIndex(0);
+          setOpen(true);
+        }}
+        onChange={(event) => {
+          setQuery(event.target.value);
+          setActiveIndex(0);
+          setOpen(true);
+          onChange('');
+        }}
+        onBlur={() => setOpen(false)}
+        onKeyDown={(event) => {
+          if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            if (!open) {
+              setQuery('');
+              setOpen(true);
+              setActiveIndex(0);
+            } else {
+              setActiveIndex((index) => Math.max(0, Math.min(index + 1, visibleOptions.length - 1)));
+            }
+          } else if (event.key === 'ArrowUp' && open) {
+            event.preventDefault();
+            setActiveIndex((index) => Math.max(index - 1, 0));
+          } else if (event.key === 'Enter' && open && visibleOptions[activeIndex]) {
+            event.preventDefault();
+            selectOption(visibleOptions[activeIndex]);
+          } else if (event.key === 'Escape' && open) {
+            event.preventDefault();
+            setOpen(false);
+            setQuery('');
+            inputRef.current?.blur();
+          }
+        }}
+        className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      />
+      {open && (
+        <ul
+          id={listId}
+          role="listbox"
+          className="absolute z-[60] mt-2 max-h-64 w-full overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 p-1 shadow-2xl"
+        >
+          {visibleOptions.map((unit, index) => (
+            <li
+              id={`${listId}-${unit.id}`}
+              key={unit.id}
+              role="option"
+              aria-selected={String(unit.id) === value}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => selectOption(unit)}
+              className={`cursor-pointer rounded-lg px-3 py-2 text-sm text-white hover:bg-slate-800 ${index === activeIndex ? 'bg-slate-800' : ''}`}
+            >
+              <span className="block">{unit.name}</span>
+              {unit.pu_code && <span className="mt-0.5 block text-xs text-slate-400">{unit.pu_code}</span>}
+            </li>
+          ))}
+          {visibleOptions.length === 0 && (
+            <li className="px-3 py-3 text-sm text-slate-400">No polling units match that search.</li>
+          )}
+          {matches.length > visibleOptions.length && (
+            <li className="px-3 py-2 text-xs text-slate-500">Showing the first 50 matches. Type more to narrow the list.</li>
+          )}
+        </ul>
+      )}
+    </div>
+  );
+};
+
 const AssignmentModal: React.FC<{
   user: AdminUser;
   mode: 'lga' | 'polling-unit';
@@ -318,7 +431,15 @@ const AssignmentModal: React.FC<{
             </div>
           </div>
         ) : (
-          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setError(null); pollingUnitMutation.mutate(); }}>
+          <form className="space-y-4" onSubmit={(e) => {
+            e.preventDefault();
+            if (!selectedPuId) {
+              setError('Choose a polling unit from the search results.');
+              return;
+            }
+            setError(null);
+            pollingUnitMutation.mutate();
+          }}>
             <label className="block text-sm font-semibold text-slate-300">
               Political LGA
               <select required value={selectedLgaId} onChange={(e) => { setSelectedLgaId(e.target.value); setSelectedPuId(''); }} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white" disabled={lgasQuery.isLoading || lgas.length === 0}>
@@ -328,13 +449,18 @@ const AssignmentModal: React.FC<{
             </label>
             {lgasQuery.isLoading && <p className="text-sm text-slate-400">Loading LGAs for {user.state_name ?? 'this state'}…</p>}
             {!lgasQuery.isLoading && !lgasQuery.isError && lgas.length === 0 && <p className="rounded-xl bg-amber-950/30 p-3 text-sm text-amber-200">No assigned LGAs are available for this account. Ask the state master admin to assign an LGA before assigning observers.</p>}
-            <label className="block text-sm font-semibold text-slate-300">
-              Polling unit
-              <select required value={selectedPuId} onChange={(e) => setSelectedPuId(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-white" disabled={!selectedLgaId || pollingUnitsQuery.isLoading || pollingUnits.length === 0}>
-                <option value="">{!selectedLgaId ? 'Select an LGA first' : pollingUnitsQuery.isLoading ? 'Loading polling units…' : 'Select a polling unit'}</option>
-                {pollingUnits.map((pu) => <option key={pu.id} value={pu.id}>{pu.name} {pu.pu_code ? `(${pu.pu_code})` : ''}</option>)}
-              </select>
-            </label>
+            <div>
+              <label htmlFor={`polling-unit-search-${user.id}`} className="block text-sm font-semibold text-slate-300">
+                Polling unit
+              </label>
+              <SearchablePollingUnitSelect
+                inputId={`polling-unit-search-${user.id}`}
+                options={pollingUnits}
+                value={selectedPuId}
+                onChange={setSelectedPuId}
+                disabled={!selectedLgaId || pollingUnitsQuery.isLoading || pollingUnits.length === 0}
+              />
+            </div>
             {selectedLgaId && !pollingUnitsQuery.isLoading && !pollingUnitsQuery.isError && pollingUnits.length === 0 && <p className="text-sm text-amber-200">No polling units were found for the selected LGA.</p>}
             <label className="block text-sm font-semibold text-slate-300">
               Election date
