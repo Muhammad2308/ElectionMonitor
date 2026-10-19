@@ -21,7 +21,7 @@ trait BelongsToTenant
                 if ($tenantId !== null) {
                     $builder->where($builder->getModel()->getTable() . '.tenant_id', $tenantId);
                 } else {
-                    // If no tenant context is set and we're not bypassed,
+                    // If no tenant context is set and we're not bypassed, 
                     // prevent access to tenant-owned tables entirely.
                     $builder->whereRaw('1 = 0');
                 }

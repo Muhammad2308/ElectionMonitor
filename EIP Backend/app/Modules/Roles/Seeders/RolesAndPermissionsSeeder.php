@@ -61,10 +61,10 @@ class RolesAndPermissionsSeeder extends Seeder
             // Notifications
             'notifications.view',
             'notifications.send',
-
+            
             // Support Access
             'support_access.grant',
-
+            
             // Audit
             'audit.view',
         ];

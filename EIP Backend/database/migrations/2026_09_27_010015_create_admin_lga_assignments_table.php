@@ -17,27 +17,27 @@ return new class extends Migration
     {
         Schema::create('admin_lga_assignments', function (Blueprint $table) {
             $table->id();
-
+            
             // RESTRICT: tenant removal only happens via tenant:purge, never
             // as a side effect of deleting something else.
             $table->foreignId('tenant_id')
                   ->constrained('tenants')
                   ->restrictOnDelete();
-
+                  
             $table->foreignId('user_id');      // must be role state_admin
             $table->foreignId('lga_id')->constrained('lgas')->cascadeOnDelete();
-
+            
             $table->foreignId('assigned_by');  // usually state_master_admin
-
+            
             $table->boolean('is_active')->default(true);
             $table->dateTime('assigned_at')->useCurrent();
-
+            
             $table->timestamps();
-
+            
             // Uniqueness and composite foreign keys
             $table->unique(['tenant_id', 'user_id', 'lga_id'], 'uq_admin_lga_tenant');
         });
-
+        
         // Composite foreign keys to users table
         DB::statement("
             ALTER TABLE admin_lga_assignments
@@ -45,7 +45,7 @@ return new class extends Migration
             FOREIGN KEY (tenant_id, user_id) REFERENCES users(tenant_id, id)
             ON DELETE CASCADE
         ");
-
+        
         DB::statement("
             ALTER TABLE admin_lga_assignments
             ADD CONSTRAINT fk_admin_lga_assigned_by

@@ -16,33 +16,33 @@ return new class extends Migration
     {
         Schema::create('user_notifications', function (Blueprint $table) {
             $table->uuid('id')->primary();
-
+            
             // RESTRICT: tenant removal only happens via tenant:purge, never
             // as a side effect of deleting something else.
             $table->foreignId('tenant_id')
                   ->constrained('tenants')
                   ->restrictOnDelete();
-
+                  
             $table->foreignId('user_id');
-
+            
             $table->foreignId('tenant_notification_id')
                   ->nullable()
                   ->constrained('tenant_notifications')
                   ->cascadeOnDelete();
-
+                  
             $table->string('title');
             $table->text('body');
             $table->json('data')->nullable(); // starts_at, deploy_at, polling_unit, etc.
-
+            
             $table->enum('priority', ['low', 'normal', 'high', 'critical'])->default('normal');
-
+            
             $table->dateTime('read_at')->nullable();
-
+            
             $table->timestamps();
-
+            
             $table->index(['tenant_id', 'user_id', 'read_at'], 'idx_user_notifications_read');
         });
-
+        
         DB::statement("
             ALTER TABLE user_notifications
             ADD CONSTRAINT fk_user_notif_user

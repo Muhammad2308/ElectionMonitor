@@ -23,7 +23,7 @@ class DeviceBindingMiddleware
 
         // Validate that the token name matches the device ID
         $token = $request->user()?->currentAccessToken();
-
+        
         if ($token && ! str_contains($token->name, $deviceId)) {
             return response()->json([
                 'message' => 'Device mismatch. Unauthorized access from this hardware.'

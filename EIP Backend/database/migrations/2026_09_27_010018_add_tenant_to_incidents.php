@@ -24,13 +24,13 @@ return new class extends Migration
             // RESTRICT: an election schedule must be explicitly retired/replaced,
             // never deleted out from under incidents that reference it.
             $table->foreignId('election_schedule_id')->nullable()->after('polling_unit_id')->constrained('election_schedules')->restrictOnDelete();
-
+            
             $table->decimal('location_accuracy_m', 8, 2)->nullable()->after('longitude');
             $table->dateTime('captured_at')->nullable()->after('location_accuracy_m');
             $table->dateTime('synced_at')->nullable()->after('captured_at');
-
+            
             $table->enum('verification_status', ['unverified', 'verified', 'rejected'])->default('unverified')->after('synced_at');
-
+            
             // Note: status, severity, category, description, lat, lng, created_at, updated_at, softDeletes already exist
             $table->foreignId('reviewed_by')->nullable()->after('status');
         });
@@ -46,7 +46,7 @@ return new class extends Migration
         // Enforce constraints
         Schema::table('incidents', function (Blueprint $table) {
             $table->dropForeign('incidents_user_id_foreign');
-
+            
             $table->unique(['tenant_id', 'id'], 'uq_incidents_tenant_id');
             $table->index(['tenant_id', 'status', 'severity'], 'idx_incidents_tenant_status_sev');
             $table->index(['tenant_id', 'polling_unit_id'], 'idx_incidents_tenant_pu');
@@ -70,7 +70,7 @@ return new class extends Migration
         Schema::table('incidents', function (Blueprint $table) {
             $table->dropForeign('fk_incidents_reviewer');
             $table->dropForeign('fk_incidents_reporter');
-
+            
             $table->dropIndex('idx_incidents_tenant_pu');
             $table->dropIndex('idx_incidents_tenant_status_sev');
             $table->dropUnique('uq_incidents_tenant_id');
@@ -90,7 +90,7 @@ return new class extends Migration
                 'election_schedule_id',
                 'tenant_id'
             ]);
-
+            
             $table->renameColumn('reporter_id', 'user_id');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });

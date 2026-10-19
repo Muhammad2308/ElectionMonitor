@@ -59,6 +59,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/',        [IncidentController::class, 'index']);
             Route::post('/report', [IncidentController::class, 'store']);
             Route::post('/media',  [IncidentController::class, 'uploadMedia']);
+            Route::get('/{id}/media/{mediaId}', [IncidentController::class, 'showMedia'])->name('incidents.media.show');
             Route::get('/{id}',    [IncidentController::class, 'show']);
         });
 

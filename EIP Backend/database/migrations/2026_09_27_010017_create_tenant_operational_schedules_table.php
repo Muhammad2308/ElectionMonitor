@@ -17,7 +17,7 @@ return new class extends Migration
     {
         Schema::create('tenant_operational_schedules', function (Blueprint $table) {
             $table->id();
-
+            
             // RESTRICT: tenant removal only happens via tenant:purge, never
             // as a side effect of deleting something else.
             $table->foreignId('tenant_id')
@@ -29,28 +29,28 @@ return new class extends Migration
             $table->foreignId('election_schedule_id')
                   ->constrained('election_schedules')
                   ->restrictOnDelete();
-
+                  
             $table->foreignId('state_id')
                   ->nullable()
                   ->constrained('states')
                   ->cascadeOnDelete();
-
+                  
             $table->dateTime('deploy_at');               // UTC; "DEPLOY NOW" alert time
             $table->dateTime('first_report_due_at')->nullable();
-
+            
             $table->text('briefing_notes')->nullable();
-
+            
             $table->foreignId('set_by');
-
+            
             $table->timestamps();
-
-            // MySQL unique indexes treat NULLs as distinct. To enforce one operational
-            // schedule per election schedule per tenant (where state might be null),
+            
+            // MySQL unique indexes treat NULLs as distinct. To enforce one operational 
+            // schedule per election schedule per tenant (where state might be null), 
             // we create a generated column for the constraint.
             $table->unsignedBigInteger('state_key')->virtualAs('COALESCE(state_id, 0)');
             $table->unique(['tenant_id', 'election_schedule_id', 'state_key'], 'uq_tenant_op_schedule');
         });
-
+        
         DB::statement("
             ALTER TABLE tenant_operational_schedules
             ADD CONSTRAINT fk_tenant_op_sched_user

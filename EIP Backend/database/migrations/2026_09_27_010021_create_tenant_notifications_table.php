@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('tenant_notifications', function (Blueprint $table) {
             $table->id();
-
+            
             // RESTRICT: tenant removal only happens via tenant:purge, never
             // as a side effect of deleting something else.
             $table->foreignId('tenant_id')
@@ -28,7 +28,7 @@ return new class extends Migration
                   ->nullable()
                   ->constrained('election_schedules')
                   ->restrictOnDelete();
-
+                  
             $table->enum('notification_type', [
                 'election_scheduled',
                 'schedule_changed',
@@ -39,24 +39,24 @@ return new class extends Migration
                 'polls_closed',
                 'custom'
             ]);
-
+            
             $table->enum('recipient_role', ['all', 'state_admins', 'observers'])->default('all');
-
+            
             $table->foreignId('state_id')
                   ->nullable()
                   ->constrained('states')
                   ->cascadeOnDelete();
-
+                  
             $table->string('title');
             $table->text('body');
-
+            
             $table->dateTime('scheduled_for'); // UTC
-
+            
             $table->enum('status', ['pending', 'sending', 'sent', 'cancelled', 'failed'])->default('pending');
             $table->dateTime('sent_at')->nullable();
-
+            
             $table->timestamps();
-
+            
             $table->index(['status', 'scheduled_for']);
         });
     }

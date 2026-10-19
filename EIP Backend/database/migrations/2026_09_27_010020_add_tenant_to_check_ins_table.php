@@ -21,9 +21,9 @@ return new class extends Migration
             // RESTRICT: tenant removal only happens via tenant:purge, never
             // as a side effect of deleting something else.
             $table->foreignId('tenant_id')->nullable()->after('uuid')->constrained('tenants')->restrictOnDelete();
-
+            
             $table->renameColumn('user_id', 'observer_id');
-
+            
             $table->decimal('accuracy_m', 8, 2)->nullable()->after('longitude');
             $table->renameColumn('check_in_time', 'captured_at');
             $table->dateTime('synced_at')->nullable()->after('captured_at');
@@ -41,7 +41,7 @@ return new class extends Migration
         Schema::table('check_ins', function (Blueprint $table) {
             $table->dropForeign('observer_check_ins_user_id_foreign');
         });
-
+        
         DB::statement("
             ALTER TABLE check_ins
             ADD CONSTRAINT fk_check_ins_observer

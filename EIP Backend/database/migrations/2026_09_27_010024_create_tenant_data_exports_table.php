@@ -16,15 +16,15 @@ return new class extends Migration
     {
         Schema::create('tenant_data_exports', function (Blueprint $table) {
             $table->id();
-
+            
             // RESTRICT: tenant removal only happens via tenant:purge, never
             // as a side effect of deleting something else.
             $table->foreignId('tenant_id')
                   ->constrained('tenants')
                   ->restrictOnDelete();
-
+                  
             $table->foreignId('requested_by'); // Usually cybernet_superadmin or national_master_admin
-
+            
             $table->enum('status', [
                 'queued',
                 'building',
@@ -33,18 +33,18 @@ return new class extends Migration
                 'confirmed',
                 'failed'
             ])->default('queued');
-
+            
             $table->char('archive_checksum', 64)->nullable();
             $table->bigInteger('archive_size_bytes')->nullable();
-
+            
             $table->string('handed_over_to')->nullable(); // Client's authorised rep
             $table->dateTime('handed_over_at')->nullable();
-
+            
             $table->dateTime('confirmed_at')->nullable();
-
+            
             $table->timestamps();
         });
-
+        
         DB::statement("
             ALTER TABLE tenant_data_exports
             ADD CONSTRAINT fk_tenant_exports_user

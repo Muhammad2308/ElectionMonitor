@@ -20,11 +20,11 @@ return new class extends Migration
             $table->foreignId('tenant_id')
                   ->constrained('tenants')
                   ->restrictOnDelete();
-
+                  
             $table->string('scope_key', 20); // "OB", "SA", "KD-SM"
-
+            
             $table->unsignedInteger('next_value')->default(1);
-
+            
             $table->primary(['tenant_id', 'scope_key']);
         });
     }
